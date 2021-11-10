@@ -1,5 +1,6 @@
 plugins {
     kotlin("multiplatform")
+    kotlin("plugin.serialization") version "1.5.31"
 }
 
 group = "io.supabase"
@@ -35,13 +36,24 @@ kotlin {
     }
 
     sourceSets {
-        val commonMain by getting
+        val commonMain by getting {
+            dependencies {
+                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.3.1")
+                implementation("io.ktor:ktor-client-core:${rootProject.extra["ktorVersion"]}")
+                implementation("io.ktor:ktor-client-serialization:${rootProject.extra["ktorVersion"]}")
+            }
+        }
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))
             }
         }
-        val jvmMain by getting
+        val jvmMain by getting {
+            dependencies {
+                implementation("io.ktor:ktor-client-cio:${rootProject.extra["ktorVersion"]}")
+            }
+        }
+        // TODO Add further ktor client implementations for the other platforms
         val jvmTest by getting
         val jsMain by getting
         val jsTest by getting
