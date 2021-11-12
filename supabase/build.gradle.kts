@@ -3,8 +3,8 @@ plugins {
     id("java-library")
 }
 
-group = "io.supabase"
-version = "0.0.1"
+group = rootProject.extra["globalGroup"].toString()
+version = rootProject.extra["globalVersion"].toString()
 
 repositories {
     mavenCentral()
@@ -13,7 +13,7 @@ repositories {
 kotlin {
     jvm {
         compilations.all {
-            kotlinOptions.jvmTarget = "11"
+            kotlinOptions.jvmTarget = rootProject.extra["jvmTarget"].toString()
         }
         testRuns["test"].executionTask.configure {
             useJUnit()

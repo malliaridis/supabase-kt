@@ -2,8 +2,8 @@ plugins {
     kotlin("multiplatform")
 }
 
-group = "io.supabase"
-version = "0.0.1"
+group = rootProject.extra["globalGroup"].toString()
+version = rootProject.extra["globalVersion"].toString()
 
 repositories {
     mavenCentral()
@@ -12,7 +12,7 @@ repositories {
 kotlin {
     jvm {
         compilations.all {
-            kotlinOptions.jvmTarget = "11"
+            kotlinOptions.jvmTarget = rootProject.extra["jvmTarget"].toString()
         }
         testRuns["test"].executionTask.configure {
             useJUnit()
@@ -37,7 +37,7 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.3.1")
+                implementation("org.jetbrains.kotlinx:kotlinx-datetime:${rootProject.extra["datetimeVersion"]}")
                 implementation("io.ktor:ktor-client-core:${rootProject.extra["ktorVersion"]}")
                 implementation("io.ktor:ktor-client-serialization:${rootProject.extra["ktorVersion"]}")
             }
