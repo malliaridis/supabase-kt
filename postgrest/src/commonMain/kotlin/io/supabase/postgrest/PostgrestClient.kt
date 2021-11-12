@@ -16,10 +16,20 @@ import io.supabase.postgrest.http.PostgrestHttpClient
  */
 open class PostgrestClient(
     private val url: Url,
-    private val headers: Map<String, String> = emptyMap(),
+    private val headers: MutableMap<String, String> = mutableMapOf(),
     private val schema: String? = null,
     private val httpClient: PostgrestHttpClient
 ) {
+
+    /**
+     * Authenticates the request with JWT.
+     *
+     * @param token  The JWT token to use.
+     */
+    fun auth(token: String): PostgrestClient {
+        this.headers["Authorization"] = "Bearer $token"
+        return this
+    }
 
     /**
      * Perform a table operation.

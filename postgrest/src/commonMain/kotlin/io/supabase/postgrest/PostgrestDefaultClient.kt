@@ -20,7 +20,7 @@ class PostgrestDefaultClient(
     schema: String? = null
 ) : PostgrestClient(
     url = url,
-    headers = headers,
+    headers = headers.toMutableMap(),
     schema = schema,
     httpClient = PostgrestHttpClientKtor(httpClient = { HttpClient() })
 )
