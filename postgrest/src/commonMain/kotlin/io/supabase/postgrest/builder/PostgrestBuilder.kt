@@ -23,7 +23,7 @@ open class PostgrestBuilder<T : Any> {
         this.httpClient = builder.httpClient
         this.url = builder.url
         this.body = builder.body
-        this.schema = schema
+        this.schema = builder.schema
     }
 
     constructor(url: Url, httpClient: PostgrestHttpClient, headers: Map<String, String>, schema: String?) {
@@ -83,8 +83,6 @@ open class PostgrestBuilder<T : Any> {
             setHeader(HttpHeaders.ContentType, ContentType.Application.Json.contentType)
         }
 
-
-//        val uriParams = searchParams.entries.joinToString("&") { (name, value) -> "$name=${URLEncoder.encode(value, StandardCharsets.UTF_8.name())}" }
         val uriParams = searchParams.toList().formUrlEncode()
 
         val uriWithParams = Url("${this.url}?${uriParams}")
