@@ -133,13 +133,6 @@ class PostgrestQueryBuilder<T : Any>(
 
         return PostgrestFilterBuilder(this)
     }
-
-    internal fun rpc(params: Any?): PostgrestBuilder<T> {
-        setMethod(HttpMethod.Post)
-        setBody(params)
-        return this
-    }
-
 }
 
 enum class Count(val identifier: String) {

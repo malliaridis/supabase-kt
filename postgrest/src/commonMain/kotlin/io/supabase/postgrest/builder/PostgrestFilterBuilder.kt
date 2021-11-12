@@ -450,7 +450,7 @@ class PostgrestFilterBuilder<T : Any>(builder: PostgrestBuilder<T>) : PostgrestT
 
     private val KProperty1<T, Any>.columnName: String
         get() {
-            return this.name.toLowerCase()
+            return this.name.lowercase()
         }
 }
 

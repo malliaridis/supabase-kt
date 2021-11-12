@@ -3,6 +3,7 @@ package io.supabase.postgrest
 import io.ktor.http.*
 import io.supabase.postgrest.builder.PostgrestBuilder
 import io.supabase.postgrest.builder.PostgrestQueryBuilder
+import io.supabase.postgrest.builder.PostgrestRpcBuilder
 import io.supabase.postgrest.http.PostgrestHttpClient
 
 /**
@@ -39,7 +40,7 @@ open class PostgrestClient(
     fun <T : Any> rpc(fn: String, params: Any?): PostgrestBuilder<T> {
         val url = Url("${this.url}/rpc/${fn}")
 
-        return PostgrestQueryBuilder<T>(url, httpClient, headers, schema).rpc(params)
+        return PostgrestRpcBuilder<T>(url, httpClient, headers, schema).rpc(params)
     }
 
 }
