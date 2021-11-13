@@ -16,10 +16,10 @@ class PostgrestRpcBuilder<T : @Serializable Any>(
      */
     fun rpc(
         params: Any?,
-        head: Boolean = false,
+        head: Boolean? = false,
         count: Count? = null
     ): PostgrestFilterBuilder<T> {
-        if (head) {
+        if (head == true) {
             setMethod(HttpMethod.Head)
 
             if (params != null && params is Map<*, *>) {

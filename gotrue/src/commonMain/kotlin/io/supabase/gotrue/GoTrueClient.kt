@@ -10,10 +10,7 @@ open class GoTrueClient(private val goTrueHttpClient: GoTrueHttpClient) {
      * @return the publicly available settings for this GoTrue instance.
      */
     suspend fun settings(): GoTrueSettings {
-        val response = goTrueHttpClient.get(
-            path = "/settings"
-        )
-
+        val response = goTrueHttpClient.get(path = "/settings")
         return deserialize(response)
     }
 

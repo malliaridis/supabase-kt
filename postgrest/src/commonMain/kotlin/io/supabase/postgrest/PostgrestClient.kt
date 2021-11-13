@@ -1,6 +1,7 @@
 package io.supabase.postgrest
 
 import io.ktor.http.*
+import io.supabase.postgrest.builder.Count
 import io.supabase.postgrest.builder.PostgrestBuilder
 import io.supabase.postgrest.builder.PostgrestQueryBuilder
 import io.supabase.postgrest.builder.PostgrestRpcBuilder
@@ -48,9 +49,9 @@ open class PostgrestClient(
      * @param[fn] The function name to call.
      * @param[params] The parameters to pass to the function call.
      */
-    fun <T : @Serializable Any> rpc(fn: String, params: Any?): PostgrestBuilder<T> {
+    fun <T : @Serializable Any> rpc(fn: String, params: Any?, head: Boolean?, count: Count?): PostgrestBuilder<T> {
         val url = Url("${this.url}/rpc/${fn}")
 
-        return PostgrestRpcBuilder<T>(url, httpClient, headers, schema).rpc(params)
+        return PostgrestRpcBuilder<T>(url, httpClient, headers, schema).rpc(params, head, count)
     }
 }

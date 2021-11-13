@@ -10,7 +10,7 @@ import kotlinx.serialization.json.Json
 /**
  * Default implementation of the [PostgrestHttpClient] used by the PostgrestDefaultClient.
  *
- * Uses closable apache HTTP-Client 5.x.
+ * Uses Ktor HTTP client.
  */
 class PostgrestHttpClientKtor(
     private val httpClient: () -> HttpClient
