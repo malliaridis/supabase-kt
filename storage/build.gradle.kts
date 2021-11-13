@@ -1,6 +1,10 @@
 plugins {
     kotlin("multiplatform")
+    kotlin("plugin.serialization") version "1.5.31"
 }
+
+group = rootProject.extra["globalGroup"].toString()
+version = rootProject.extra["globalVersion"].toString()
 
 group = "io.supabase"
 version = "0.0.1"
@@ -35,7 +39,13 @@ kotlin {
     }
 
     sourceSets {
-        val commonMain by getting
+        val commonMain by getting {
+            dependencies {
+                implementation("org.jetbrains.kotlinx:kotlinx-datetime:${rootProject.extra["datetimeVersion"]}")
+                implementation("io.ktor:ktor-client-core:${rootProject.extra["ktorVersion"]}")
+                implementation("io.ktor:ktor-client-serialization:${rootProject.extra["ktorVersion"]}")
+            }
+        }
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))
