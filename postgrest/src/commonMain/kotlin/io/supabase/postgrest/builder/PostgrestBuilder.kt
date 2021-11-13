@@ -3,10 +3,9 @@ package io.supabase.postgrest.builder
 import io.ktor.http.*
 import io.supabase.postgrest.http.PostgrestHttpClient
 import io.supabase.postgrest.http.PostgrestHttpResponse
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.json.Json
+import kotlinx.serialization.Serializable
 
-open class PostgrestBuilder<T : Any> {
+open class PostgrestBuilder<T : @Serializable Any> {
 
     val httpClient: PostgrestHttpClient
     private val url: Url
@@ -66,7 +65,7 @@ open class PostgrestBuilder<T : Any> {
         return this.method
     }
 
-    suspend fun execute(): PostgrestHttpResponse {
+    suspend fun <R : @Serializable Any> execute(): PostgrestHttpResponse<R> {
         checkNotNull(method) { "Method cannot be null" }
 
         // https://postgrest.org/en/stable/api.html#switching-schemas
@@ -95,13 +94,13 @@ open class PostgrestBuilder<T : Any> {
         )
     }
 
-    suspend inline fun <reified R : Any> executeAndGetSingle(): R {
-        val response = execute()
-        return Json.decodeFromString(response.body!!)
-    }
-
-    suspend inline fun <reified R : Any> executeAndGetList(): List<R> {
-        val response = execute()
-        return Json.decodeFromString(response.body!!)
-    }
+//    suspend inline fun <reified R : Any> executeAndGetSingle(): R {
+//        val response = execute<R>()
+//        return Json.decodeFromString(response.body!!)
+//    }
+//
+//    suspend inline fun <reified R : Any> executeAndGetList(): List<R> {
+//        val response = execute<R>()
+//        return Json.decodeFromString(response.body!!)
+//    }
 }

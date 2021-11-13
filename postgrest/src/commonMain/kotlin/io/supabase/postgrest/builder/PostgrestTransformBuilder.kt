@@ -1,9 +1,11 @@
 package io.supabase.postgrest.builder
 
 import io.ktor.http.*
+import kotlinx.serialization.Serializable
 import kotlin.reflect.KProperty1
 
-open class PostgrestTransformBuilder<T : Any>(builder: PostgrestBuilder<T>) : PostgrestBuilder<T>(builder) {
+open class PostgrestTransformBuilder<T : @Serializable Any>(builder: PostgrestBuilder<T>) :
+    PostgrestBuilder<T>(builder) {
 
     /**
      * Performs vertical filtering with SELECT.

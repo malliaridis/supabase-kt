@@ -1,6 +1,7 @@
 package io.supabase.postgrest.http
 
 import io.ktor.http.*
+import kotlinx.serialization.Serializable
 
 /**
  * Interface used by the PostgrestClient, allows replacing the default HTTP client.
@@ -9,10 +10,10 @@ import io.ktor.http.*
  */
 interface PostgrestHttpClient {
 
-    suspend fun execute(
+    suspend fun <T : @Serializable Any> execute(
         uri: Url,
         method: HttpMethod,
         headers: Map<String, String> = emptyMap(),
         body: Any? = null
-    ): PostgrestHttpResponse
+    ): PostgrestHttpResponse<T>
 }

@@ -1,5 +1,6 @@
 plugins {
     kotlin("multiplatform")
+    kotlin("plugin.serialization") version "1.5.31"
 }
 
 group = rootProject.extra["globalGroup"].toString()

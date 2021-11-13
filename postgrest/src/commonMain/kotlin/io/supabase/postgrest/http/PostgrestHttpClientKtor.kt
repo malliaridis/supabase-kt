@@ -16,12 +16,12 @@ class PostgrestHttpClientKtor(
     private val httpClient: () -> HttpClient
 ) : PostgrestHttpClient {
 
-    override suspend fun execute(
+    override suspend fun <R : @Serializable Any> execute(
         uri: Url,
         method: HttpMethod,
         headers: Map<String, String>,
         body: @Serializable Any?
-    ): PostgrestHttpResponse {
+    ): PostgrestHttpResponse<R> {
         return httpClient().request(uri) {
             this.method = method
             this.body = Json.encodeToString(body)

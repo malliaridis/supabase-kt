@@ -2,8 +2,9 @@ package io.supabase.postgrest.builder
 
 import io.ktor.http.*
 import io.supabase.postgrest.http.PostgrestHttpClient
+import kotlinx.serialization.Serializable
 
-class PostgrestRpcBuilder<T : Any>(
+class PostgrestRpcBuilder<T : @Serializable Any>(
     url: Url,
     postgrestHttpClient: PostgrestHttpClient,
     defaultHeaders: Map<String, String>,

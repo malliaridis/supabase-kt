@@ -1,8 +1,10 @@
 package io.supabase.postgrest.builder
 
+import kotlinx.serialization.Serializable
 import kotlin.reflect.KProperty1
 
-class PostgrestFilterBuilder<T : Any>(builder: PostgrestBuilder<T>) : PostgrestTransformBuilder<T>(builder) {
+class PostgrestFilterBuilder<T : @Serializable Any>(builder: PostgrestBuilder<T>) :
+    PostgrestTransformBuilder<T>(builder) {
 
     /**
      * Finds all rows which doesn't satisfy the filter.
