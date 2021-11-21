@@ -1,5 +1,6 @@
 plugins {
     kotlin("multiplatform")
+    kotlin("plugin.serialization") version "1.5.31"
 }
 
 group = "io.supabase"
@@ -37,7 +38,11 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                // TODO Add websockets dependencies
+                implementation("org.jetbrains.kotlinx:kotlinx-datetime:${rootProject.extra["datetimeVersion"]}")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${rootProject.extra["coroutineVersion"]}")
+                implementation("io.ktor:ktor-client-core:${rootProject.extra["ktorVersion"]}")
+                implementation("io.ktor:ktor-client-serialization:${rootProject.extra["ktorVersion"]}")
+                implementation("io.ktor:ktor-client-websockets:${rootProject.extra["ktorVersion"]}")
             }
         }
         val commonTest by getting {

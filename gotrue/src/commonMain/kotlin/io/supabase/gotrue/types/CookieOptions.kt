@@ -10,7 +10,7 @@ data class CookieOptions(
     /**
      * (Optional) The cookie lifetime (expiration) in seconds. Set to 8 hours by default.
      */
-    val lifetime: Long?,
+    val lifetime: Long?, // TODO See if this is equals with maxAge
 
     /**
      * (Optional) The cookie domain this should run on. Leave it blank to restrict it to your domain.
@@ -23,4 +23,12 @@ data class CookieOptions(
      * (Optional) SameSite configuration for the session cookie. Defaults to 'lax', but can be changed to 'strict' or 'none'. Set it to false if you want to disable the SameSite setting.
      */
     val sameSite: String?
+)
+
+val DEFAULT_COOKIES = CookieOptions(
+    name = "sb:token",
+    lifetime = 60 * 60 * 8,
+    domain = "",
+    path = "/",
+    sameSite = "lax",
 )

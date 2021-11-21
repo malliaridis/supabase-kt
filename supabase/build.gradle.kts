@@ -1,6 +1,6 @@
 plugins {
     kotlin("multiplatform")
-    id("java-library")
+    kotlin("plugin.serialization") version "1.5.31"
 }
 
 group = rootProject.extra["globalGroup"].toString()
@@ -42,6 +42,10 @@ kotlin {
                 implementation(project(":postgrest"))
                 implementation(project(":realtime"))
                 implementation(project(":storage"))
+
+                implementation("org.jetbrains.kotlinx:kotlinx-datetime:${rootProject.extra["datetimeVersion"]}")
+                implementation("io.ktor:ktor-client-core:${rootProject.extra["ktorVersion"]}")
+                implementation("io.ktor:ktor-client-serialization:${rootProject.extra["ktorVersion"]}")
             }
         }
         val commonTest by getting {

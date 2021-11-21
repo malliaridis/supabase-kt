@@ -20,7 +20,7 @@ open class PostgrestClient(
     private val url: Url,
     private val headers: MutableMap<String, String> = mutableMapOf(),
     private val schema: String? = null,
-    private val httpClient: PostgrestHttpClient
+    val httpClient: PostgrestHttpClient
 ) {
 
     /**
