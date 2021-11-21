@@ -1,26 +1,27 @@
 package io.supabase.gotrue.types
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 
 @Serializable
 data class User(
     val id: String,
-    val app_metadata: AppMetadata,
-    val user_metadata: Map<String, JsonElement>,
+    @SerialName("app_metadata") val appMetadata: AppMetadata,
+    @SerialName("user_metadata") val userMetadata: Map<String, JsonElement>,
     val aud: String,
-    val confirmation_sent_at: String?,
-    val recovery_sent_at: String?,
-    val action_link: String?,
+    @SerialName("confirmation_sent_at") val confirmationSentAt: String?,
+    @SerialName("recovery_sent_at") val recoverySentAt: String?,
+    @SerialName("action_link") val actionLink: String?,
     val email: String?,
     val phone: String?,
-    val created_at: String,
-    val confirmed_at: String?,
-    val email_confirmed_at: String?,
-    val phone_confirmed_at: String?,
-    val last_sign_in_at: String?,
+    @SerialName("created_at") val createdAt: String,
+    @SerialName("confirmed_at") val confirmedAt: String?,
+    @SerialName("email_confirmed_at") val emailConfirmedAt: String?,
+    @SerialName("phone_confirmed_at") val phoneConfirmedAt: String?,
+    @SerialName("last_sign_in_at") val lastSignInAt: String?,
     val role: String?,
-    val updated_at: String?
+    @SerialName("updated_at") val updatedAt: String?
 )
 
 @Serializable

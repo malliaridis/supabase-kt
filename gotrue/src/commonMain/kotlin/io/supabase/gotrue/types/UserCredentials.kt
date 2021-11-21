@@ -1,5 +1,7 @@
 package io.supabase.gotrue.types
 
+import io.supabase.gotrue.domain.Provider
+
 data class UserCredentials(
     val email: String?,
     val phone: String?,

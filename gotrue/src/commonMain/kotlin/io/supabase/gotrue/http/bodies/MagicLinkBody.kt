@@ -1,6 +1,6 @@
 package io.supabase.gotrue.http.bodies
 
-import io.supabase.gotrue.types.MagicLinkType
+import io.supabase.gotrue.domain.MagicLinkType
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement

@@ -3,8 +3,10 @@ plugins {
     kotlin("plugin.serialization") version "1.5.31"
 }
 
-group = rootProject.extra["globalGroup"].toString()
-version = rootProject.extra["globalVersion"].toString()
+//group = rootProject.extra["globalGroup"].toString()
+//version = rootProject.extra["globalVersion"].toString()
+group = "io.supabase"
+version = "0.0.1"
 
 repositories {
     mavenCentral()
@@ -39,8 +41,10 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:${rootProject.extra["datetimeVersion"]}")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${rootProject.extra["coroutineVersion"]}")
                 implementation("io.ktor:ktor-client-core:${rootProject.extra["ktorVersion"]}")
                 implementation("io.ktor:ktor-client-serialization:${rootProject.extra["ktorVersion"]}")
+                implementation("io.ktor:ktor-client-auth:${rootProject.extra["ktorVersion"]}")
             }
         }
         val commonTest by getting {

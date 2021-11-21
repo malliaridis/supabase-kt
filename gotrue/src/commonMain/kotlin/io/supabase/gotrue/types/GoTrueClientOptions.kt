@@ -1,7 +1,5 @@
 package io.supabase.gotrue.types
 
-import io.supabase.gotrue.http.GoTrueHttpClient
-
 interface SupportedStorage {
     suspend fun getItem(key: String): String
 
@@ -17,6 +15,5 @@ data class GoTrueClientOptions(
     val autoRefreshToken: Boolean = true,
     val persistSession: Boolean = true,
     val localStorage: SupportedStorage? = null,
-    val cookieOptions: CookieOptions? = null,
-    val goTrueHttpClient: GoTrueHttpClient
+    val cookieOptions: CookieOptions? = null
 )

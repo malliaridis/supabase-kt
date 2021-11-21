@@ -1,22 +1,23 @@
 package io.supabase.gotrue.types
 
 import io.supabase.gotrue.helper.expiresAt
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class Session(
-    val provider_token: String?,
+    @SerialName("provider_token") val providerToken: String?,
 
-    val access_token: String,
+    @SerialName("access_token") val accessToken: String,
 
     /**
      * The number of seconds until the token expires (since it was issued). Returned when a login is confirmed.
      */
-    val expires_in: Long?,
+    @SerialName("expires_in") val expiresIn: Long?,
 
-    val refresh_token: String?,
+    @SerialName("refresh_token") val refreshToken: String?,
 
-    val token_type: String,
+    @SerialName("token_type") val tokenType: String,
 
     val user: User?
 ) {
@@ -24,6 +25,6 @@ data class Session(
     /**
      * A timestamp of when the token will expire. Returned when a login is confirmed.
      */
-    val expires_at: Long?
-        get() = expires_in?.let { expiresAt(it) }
+    val expiresAt: Long?
+        get() = expiresIn?.let { expiresAt(it) }
 }

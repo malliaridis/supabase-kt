@@ -1,6 +1,7 @@
 package io.supabase.gotrue.http
 
-import io.supabase.gotrue.types.Provider
+import io.supabase.gotrue.ApiError
+import io.supabase.gotrue.domain.Provider
 import io.supabase.gotrue.types.Session
 import io.supabase.gotrue.types.User
 

@@ -4,9 +4,14 @@ import io.ktor.client.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
+import io.supabase.gotrue.domain.MagicLinkType
+import io.supabase.gotrue.domain.Provider
 import io.supabase.gotrue.http.bodies.*
 import io.supabase.gotrue.http.results.*
-import io.supabase.gotrue.types.*
+import io.supabase.gotrue.types.CookieOptions
+import io.supabase.gotrue.types.Session
+import io.supabase.gotrue.types.User
+import io.supabase.gotrue.types.UserAttributes
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 
@@ -20,7 +25,7 @@ open class GoTrueApi(
     internal val url: String,
     internal val headers: Headers,
     internal val cookieOptions: CookieOptions, // TODO Use default Cookie Options if any missing
-    internal val httpClient: HttpClient // TODO Convert to HttpClientKtor
+    internal val httpClient: HttpClient = HttpClient()// TODO Convert to HttpClientKtor
     // TODO See if headers need to be passed if already client is passed
 ) {
 
@@ -367,6 +372,7 @@ open class GoTrueApi(
 //        } catch (e: Exception) {
 //            UserDataResult.Failure(e as ApiError)
 //        }
+        TODO("Implement me")
     }
 
     /**
