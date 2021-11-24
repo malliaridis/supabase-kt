@@ -1,8 +1,10 @@
 package io.supabase.realtime.helper
 
+import io.ktor.http.*
+
 const val version = "0.0.0"
 
-val DEFAULT_HEADERS = mapOf("X-Client-Info" to "realtime-js/${version}")
+val DEFAULT_HEADERS = headersOf("X-Client-Info", "realtime-js/${version}")
 
 const val VSN: String = "1.0.0"
 

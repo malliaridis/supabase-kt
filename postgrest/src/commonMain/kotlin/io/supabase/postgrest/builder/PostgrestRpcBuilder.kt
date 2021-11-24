@@ -7,7 +7,7 @@ import kotlinx.serialization.Serializable
 class PostgrestRpcBuilder<T : @Serializable Any>(
     url: Url,
     postgrestHttpClient: PostgrestHttpClient,
-    defaultHeaders: Map<String, String>,
+    defaultHeaders: Headers = headersOf(),
     schema: String?
 ) : PostgrestBuilder<T>(url, postgrestHttpClient, defaultHeaders, schema) {
 

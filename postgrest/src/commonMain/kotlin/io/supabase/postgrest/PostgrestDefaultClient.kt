@@ -16,11 +16,11 @@ import io.supabase.postgrest.http.PostgrestHttpClientKtor
  */
 class PostgrestDefaultClient(
     url: Url,
-    headers: Map<String, String> = emptyMap(),
+    headers: Headers = headersOf(),
     schema: String? = null
 ) : PostgrestClient(
     url = url,
-    headers = headers.toMutableMap(),
+    headers = headers,
     schema = schema,
     httpClient = PostgrestHttpClientKtor(httpClient = { HttpClient() })
 )

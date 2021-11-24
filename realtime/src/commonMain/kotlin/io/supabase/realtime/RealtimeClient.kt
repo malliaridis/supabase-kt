@@ -35,7 +35,7 @@ data class RealtimeClientOptions(
     val longPollerTimeout: Long?,
     val logger: ((kind: String, msg: String, data: Any?) -> Unit)?,
     val reconnectAfterMs: ((tries: Int) -> Long)?,
-    val headers: Map<String, String>?,
+    val headers: Headers?,
     val params: Map<String, String>?
 )
 
@@ -91,7 +91,7 @@ open class RealtimeClient(
     internal val options: RealtimeClientOptions?
 ) {
 
-    private val headers: Map<String, String> = options?.headers?.let { TODO("Merge headers") } ?: DEFAULT_HEADERS
+    private val headers: Headers = options?.headers?.let { TODO("Merge headers") } ?: DEFAULT_HEADERS
     private val params: Map<String, String> = options?.params ?: emptyMap()
 
     private val heartbeatIntervalMs: Long = options?.heartbeatIntervalMs ?: 30000
@@ -145,7 +145,7 @@ open class RealtimeClient(
             port = 8080,
             path = "/websocket?vsn=1.0.0",
             request = {
-                headers { this@RealtimeClient.headers.forEach { append(it.key, it.value) } }
+                headers { appendAll(this@RealtimeClient.headers) }
                 timeout {
                     // connectTimeoutMillis = longPollerTimeout
                     socketTimeoutMillis = longPollerTimeout

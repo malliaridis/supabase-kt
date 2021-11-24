@@ -1,16 +1,18 @@
 package io.supabase.storage.http
 
+import io.ktor.http.*
+
 // TODO See if FetchOptions can be removed and headers directly accessed
 data class FetchOptions(
-    val headers: Map<String, String>,
-    val noResolveJson: Boolean?
+    val headers: Headers = headersOf(),
+    val noResolveJson: Boolean? = false
 )
 
 interface StorageHttpClient {
 
     val url: String
 
-    val headers: Map<String, String>
+    val headers: Headers
 
     suspend fun get(path: String, options: FetchOptions?): String
 

@@ -1,5 +1,6 @@
 package io.supabase.postgrest
 
+import io.ktor.client.utils.*
 import io.ktor.http.*
 import io.supabase.postgrest.builder.Count
 import io.supabase.postgrest.builder.PostgrestBuilder
@@ -18,7 +19,7 @@ import kotlinx.serialization.Serializable
  */
 open class PostgrestClient(
     private val url: Url,
-    private val headers: MutableMap<String, String> = mutableMapOf(),
+    private var headers: Headers = headersOf(),
     private val schema: String? = null,
     val httpClient: PostgrestHttpClient
 ) {
@@ -29,7 +30,10 @@ open class PostgrestClient(
      * @param token  The JWT token to use.
      */
     fun auth(token: String): PostgrestClient {
-        this.headers["Authorization"] = "Bearer $token"
+        headers = buildHeaders {
+            appendAll(headers)
+            append("Authorization", "Bearer $token")
+        }
         return this
     }
 

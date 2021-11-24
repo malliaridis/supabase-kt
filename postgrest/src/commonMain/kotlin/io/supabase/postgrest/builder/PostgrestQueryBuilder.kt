@@ -7,7 +7,7 @@ import kotlinx.serialization.Serializable
 open class PostgrestQueryBuilder<T : @Serializable Any>(
     url: Url,
     postgrestHttpClient: PostgrestHttpClient,
-    defaultHeaders: Map<String, String>,
+    defaultHeaders: Headers,
     schema: String?
 ) : PostgrestBuilder<T>(url, postgrestHttpClient, defaultHeaders, schema) {
 

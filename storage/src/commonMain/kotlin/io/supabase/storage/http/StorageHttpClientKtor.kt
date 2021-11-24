@@ -2,6 +2,7 @@ package io.supabase.storage.http
 
 import io.ktor.client.*
 import io.ktor.client.request.*
+import io.ktor.http.*
 
 /**
  * Default implementation of the [StorageHttpClient] used by the StorageDefaultHttpClient.
@@ -10,7 +11,7 @@ import io.ktor.client.request.*
  */
 class StorageHttpClientKtor(
     override val url: String,
-    override val headers: Map<String, String>,
+    override val headers: Headers,
     private val httpClient: () -> HttpClient
 ) : StorageHttpClient {
 

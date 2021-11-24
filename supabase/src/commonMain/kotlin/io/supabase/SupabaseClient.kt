@@ -181,11 +181,13 @@ open class SupabaseClient(
         )
     }
 
-    private fun getAuthHeaders(): Map<String, String> {
-        val headers: MutableMap<String, String> = DEFAULT_HEADERS.toMutableMap()
+    private fun getAuthHeaders(): Headers {
         val authBearer = auth.session()?.accessToken ?: supabaseKey
-        headers["apikey"] = supabaseKey
-        headers["Authorization"] = "Bearer $authBearer"
+        val headers = buildHeaders {
+            appendAll(DEFAULT_HEADERS)
+            append("apikey", supabaseKey)
+            append("Authorization", "Bearer $authBearer")
+        }
         return headers
     }
 

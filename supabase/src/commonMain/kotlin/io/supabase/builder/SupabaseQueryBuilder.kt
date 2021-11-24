@@ -10,7 +10,7 @@ import io.supabase.types.SupabaseRealtimePayload
 
 class SupabaseQueryBuilder<T : Any>(
     private val url: Url,
-    private val headers: Map<String, String>,
+    private val headers: Headers,
     private val postgrest: PostgrestHttpClient, // TODO See if client could be any client
     private val schema: String?,
     private val realtime: RealtimeClient,

@@ -42,7 +42,7 @@ class GoTrueApi(
         tokenClient = tokenClient.config {
             defaultRequest {
                 headers {
-                    this@GoTrueApi.headers.forEach { key, value -> appendAll(key, value) }
+                    appendAll(this@GoTrueApi.headers)
                     append(HttpHeaders.ContentType, "application/json")
                 }
             }
@@ -96,7 +96,7 @@ class GoTrueApi(
             authClient = authClient.config {
                 defaultRequest {
                     headers {
-                        this@GoTrueApi.headers.forEach { key, value -> appendAll(key, value) }
+                        appendAll(this@GoTrueApi.headers)
                         append(HttpHeaders.ContentType, "application/json")
                     }
                 }

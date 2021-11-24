@@ -1,6 +1,7 @@
 package io.supabase.storage
 
 import io.ktor.client.*
+import io.ktor.http.*
 import io.supabase.storage.http.StorageHttpClientKtor
 
 /**
@@ -8,7 +9,7 @@ import io.supabase.storage.http.StorageHttpClientKtor
  */
 class StorageDefaultClient(
     url: String,
-    headers: Map<String, String>
+    headers: Headers
 ) : StorageClient(
     storageHttpClient = StorageHttpClientKtor(
         url = url,

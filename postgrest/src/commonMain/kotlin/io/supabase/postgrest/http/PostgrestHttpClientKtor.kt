@@ -19,15 +19,13 @@ class PostgrestHttpClientKtor(
     override suspend fun <R : @Serializable Any> execute(
         uri: Url,
         method: HttpMethod,
-        headers: Map<String, String>,
+        headers: Headers,
         body: @Serializable Any?
     ): PostgrestHttpResponse<R> {
         return httpClient().request(uri) {
             this.method = method
             this.body = Json.encodeToString(body)
-            this.headers {
-                headers.forEach { (name, value) -> append(name, value) }
-            }
+            this.headers { appendAll(headers) }
         }
     }
 }

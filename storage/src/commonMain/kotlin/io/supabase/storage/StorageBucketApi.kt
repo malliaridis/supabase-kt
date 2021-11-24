@@ -1,5 +1,6 @@
 package io.supabase.storage
 
+import io.ktor.http.*
 import io.supabase.storage.http.FetchOptions
 import io.supabase.storage.http.StorageHttpClient
 import io.supabase.storage.json.deserialize
@@ -13,7 +14,7 @@ data class BucketCreateOptions(
 )
 
 open class StorageBucketApi(
-    private val headers: Map<String, String>,
+    private val headers: Headers,
     private val httpClient: StorageHttpClient
 ) {
 

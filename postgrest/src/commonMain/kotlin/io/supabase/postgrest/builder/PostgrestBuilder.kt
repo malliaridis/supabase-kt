@@ -11,7 +11,7 @@ open class PostgrestBuilder<T : @Serializable Any> {
     private val url: Url
 
     private var schema: String? = null
-    private var headers: MutableMap<String, String> = mutableMapOf()
+    private var headers: HeadersBuilder = HeadersBuilder()
     private var method: HttpMethod? = null
     private var body: Any? = null
     private var searchParams: MutableMap<String, String> = mutableMapOf()
@@ -25,16 +25,16 @@ open class PostgrestBuilder<T : @Serializable Any> {
         this.schema = builder.schema
     }
 
-    constructor(url: Url, httpClient: PostgrestHttpClient, headers: Map<String, String>, schema: String?) {
+    constructor(url: Url, httpClient: PostgrestHttpClient, headers: Headers, schema: String?) {
         this.url = url
         this.httpClient = httpClient
         this.schema = schema
 
-        headers.forEach { (name, value) -> setHeader(name, value) }
+        this.headers.appendAll(headers)
     }
 
     protected fun setHeader(name: String, value: String) {
-        this.headers[name] = value
+        this.headers.append(name, value)
     }
 
     protected fun setSearchParam(name: String, value: String) {
@@ -57,8 +57,8 @@ open class PostgrestBuilder<T : @Serializable Any> {
         return this.body
     }
 
-    fun getHeaders(): Map<String, String> {
-        return this.headers
+    fun getHeaders(): Headers {
+        return this.headers.build()
     }
 
     fun getMethod(): HttpMethod? {
@@ -89,7 +89,7 @@ open class PostgrestBuilder<T : @Serializable Any> {
         return httpClient.execute(
             uri = uriWithParams,
             method = method!!,
-            headers = headers,
+            headers = headers.build(),
             body = body
         )
     }

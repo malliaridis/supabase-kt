@@ -1,5 +1,6 @@
 package io.supabase
 
+import io.ktor.http.*
 import io.supabase.realtime.RealtimeClient
 import io.supabase.realtime.RealtimeSubscription
 import io.supabase.types.SimplePayload
@@ -8,7 +9,7 @@ import io.supabase.types.SupabaseRealtimePayload
 
 class SupabaseRealtimeClient(
     private val socket: RealtimeClient,
-    private val headers: Map<String, String>,
+    private val headers: Headers,
     private val schema: String?,
     private val tableName: String
 ) {

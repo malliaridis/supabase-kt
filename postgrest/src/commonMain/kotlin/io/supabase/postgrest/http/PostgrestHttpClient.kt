@@ -13,7 +13,7 @@ interface PostgrestHttpClient {
     suspend fun <T : @Serializable Any> execute(
         uri: Url,
         method: HttpMethod,
-        headers: Map<String, String> = emptyMap(),
+        headers: Headers = headersOf(),
         body: Any? = null
     ): PostgrestHttpResponse<T>
 }

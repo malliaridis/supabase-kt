@@ -1,5 +1,7 @@
 package io.supabase.gotrue.types
 
+import io.ktor.http.*
+
 interface SupportedStorage {
     suspend fun getItem(key: String): String
 
@@ -12,7 +14,7 @@ expect class LocalStorage() : SupportedStorage
 
 data class GoTrueClientOptions(
     val url: String,
-    val headers: Map<String, String> = emptyMap(),
+    val headers: Headers = headersOf(),
     val detectSessionInUrl: Boolean = true,
     val autoRefreshToken: Boolean = true,
     val persistSession: Boolean = true,

@@ -71,7 +71,7 @@ class StorageFileApi(
             upsert = fileOptions?.upsert ?: DEFAULT_FILE_OPTIONS.upsert
         )
 
-        val headers: Map<String, String> = emptyMap()
+        val headers: Headers = headersOf()
 
         // TODO Add header "x-upsert": options.upsert if method is HttpMethod.Post
         // {
@@ -180,7 +180,7 @@ class StorageFileApi(
                 append("sourceKey", fromPath)
                 append("destinationKey", toPath)
             },
-            options = FetchOptions(emptyMap(), true)
+            options = FetchOptions(headersOf(), true)
         )
     }
 
@@ -197,7 +197,7 @@ class StorageFileApi(
         val finalPath = this.getFinalPath(path)
         val data = storageHttpClient.post(
             path = "/object/sign/${finalPath}",
-            options = FetchOptions(emptyMap(), true),
+            options = FetchOptions(headersOf(), true),
             body = null
             // TODO See where to pass expiresIn
 //            ??? = { expiresIn }
@@ -212,7 +212,7 @@ class StorageFileApi(
      */
     suspend fun download(path: String): ByteArray {
         val finalPath = this.getFinalPath(path)
-        val res = storageHttpClient.get(path = "/object/${finalPath}", FetchOptions(emptyMap(), true))
+        val res = storageHttpClient.get(path = "/object/${finalPath}", FetchOptions(headersOf(), true))
         return res.toByteArray()
     }
 
