@@ -7,11 +7,11 @@ import kotlinx.coroutines.runBlocking
 
 fun main() {
     runBlocking {
-        val url = System.getenv("SUPABASE_URL")
+        val goTrueUrl = "${System.getenv("SUPABASE_URL")}/auth/v1"
         val apiKey = System.getenv("SUPABASE_API_KEY")
 
         val headers = headersOf("apikey", apiKey)
-        val client = GoTrueClient(url, headers)
+        val client = GoTrueClient(goTrueUrl, headers)
 
         when (val result =
             client.signIn(email = System.getenv("SUPABASE_USERNAME"), password = System.getenv("SUPABASE_PASSWORD"))) {

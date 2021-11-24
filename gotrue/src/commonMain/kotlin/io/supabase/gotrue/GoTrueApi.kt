@@ -16,11 +16,9 @@ import io.supabase.gotrue.http.results.*
 import io.supabase.gotrue.types.UserAttributes
 import kotlinx.serialization.json.JsonElement
 
-private const val goTrue = "/auth/v1"
-
 /**
  *
- * @param url The Base URL of the supabase project.
+ * @param url The Base URL of the supabase project including the auth extension of GoTrue (usually `/auth/v1`).
  * @param headers The headers to apply to all requests.
  */
 class GoTrueApi(
@@ -71,7 +69,7 @@ class GoTrueApi(
         return try {
             var queryString = ""
             redirectTo?.let { queryString = "?redirect_to=" + it.encodeURLQueryComponent() }
-            val result: Session = tokenClient.post("$url$goTrue/signup$queryString") {
+            val result: Session = tokenClient.post("$url/signup$queryString") {
                 body = SignUpEmailBody(email, password, data)
             }
 
@@ -90,7 +88,7 @@ class GoTrueApi(
      */
     suspend fun signInWithEmail(email: String, password: String, redirectTo: String? = null): SessionResult {
         return try {
-            val session: Session = tokenClient.post("$url$goTrue/token") {
+            val session: Session = tokenClient.post("$url/token") {
                 parameter("grant_type", "password")
                 body = SignInEmailBody(email, password)
             }
@@ -124,7 +122,7 @@ class GoTrueApi(
      */
     suspend fun signUpWithPhone(phone: String, password: String, data: JsonElement?): UserSessionResult {
         return try {
-            val response: Session = tokenClient.post("$url$goTrue/signup") {
+            val response: Session = tokenClient.post("$url/signup") {
                 body = SignUpPhoneBody(phone, password, data)
             }
 
@@ -142,7 +140,7 @@ class GoTrueApi(
     suspend fun signInWithPhone(phone: String, password: String): SessionResult {
         return try {
             val queryString = "?grant_type=password"
-            val response: Session = tokenClient.post("$url$goTrue/token$queryString") {
+            val response: Session = tokenClient.post("$url/token$queryString") {
                 body = SignInPhoneBody(phone, password)
             }
 
@@ -162,7 +160,7 @@ class GoTrueApi(
             var queryString = ""
             redirectTo?.let { queryString += "?redirect_to=" + it.encodeURLQueryComponent() } // TODO See if encodeUrlParameter is correct
 
-            tokenClient.post<Unit>("$url$goTrue/magiclink$queryString") {
+            tokenClient.post<Unit>("$url/magiclink$queryString") {
                 body = MagicLinkEmailBody(email)
             }
 
@@ -178,7 +176,7 @@ class GoTrueApi(
      */
     suspend fun sendMobileOTP(phone: String): MobileOTPResult {
         return try {
-            tokenClient.post<Unit>("$url$goTrue/otp") {
+            tokenClient.post<Unit>("$url/otp") {
                 body = MobileOTPBody(phone)
             }
             EmptyResult.Success()
@@ -195,7 +193,7 @@ class GoTrueApi(
      */
     suspend fun verifyMobileOTP(phone: String, token: String, redirectTo: String?): UserSessionResult {
         return try {
-            val response: Session = tokenClient.post("$url$goTrue/verify") {
+            val response: Session = tokenClient.post("$url/verify") {
                 body = VerifyMobileOTPBody(phone, token, "sms", redirectTo)
             }
 
@@ -216,7 +214,7 @@ class GoTrueApi(
             var queryString = ""
             redirectTo?.let { queryString += "?redirect_to=" + redirectTo.encodeURLQueryComponent() }
 
-            val response: UserInfo = tokenClient.post("$url$goTrue/invite$queryString") {
+            val response: UserInfo = tokenClient.post("$url/invite$queryString") {
                 body = EmailInviteBody(email, data)
             }
 
@@ -236,7 +234,7 @@ class GoTrueApi(
             var queryString = ""
             redirectTo?.let { queryString += "?redirect_to=" + redirectTo.encodeURLQueryComponent() }
 
-            tokenClient.post<Unit>("$url$goTrue/recover$queryString") {
+            tokenClient.post<Unit>("$url/recover$queryString") {
                 body = { email }
             }
             EmptyResult.Success()
@@ -250,7 +248,7 @@ class GoTrueApi(
      */
     suspend fun signOut(): EmptyResult {
         return try {
-            authClient.post<Unit>("$url$goTrue/logout")
+            authClient.post<Unit>("$url/logout")
             authClient = tokenClient
 
             EmptyResult.Success()
@@ -271,7 +269,7 @@ class GoTrueApi(
         redirectTo?.let { urlParams.add("redirect_to=${redirectTo.encodeURLQueryComponent()}") }
         scopes?.let { urlParams.add("scopes=${scopes.encodeURLQueryComponent()}") }
 
-        return "$url$goTrue/authorize?${urlParams.joinToString("&")}"
+        return "$url/authorize?${urlParams.joinToString("&")}"
     }
 
     /**
@@ -279,7 +277,7 @@ class GoTrueApi(
      */
     suspend fun getUser(): UserDataResult {
         return try {
-            val response: UserInfo = authClient.get("$url$goTrue/user")
+            val response: UserInfo = authClient.get("$url/user")
             UserDataResult.Success(response, response)
         } catch (error: ApiError) {
             UserDataResult.Failure(error)
@@ -292,7 +290,7 @@ class GoTrueApi(
      */
     suspend fun updateUser(attributes: UserAttributes): UserDataResult {
         return try {
-            val response: UserInfo = authClient.put("$url$goTrue/user") {
+            val response: UserInfo = authClient.put("$url/user") {
                 body = attributes
             }
 
@@ -311,7 +309,7 @@ class GoTrueApi(
      */
     suspend fun deleteUser(uid: String): UserDataResult {
         return try {
-            val response: UserInfo = authClient.delete("$url$goTrue/admin/users/$uid")
+            val response: UserInfo = authClient.delete("$url/admin/users/$uid")
             UserDataResult.Success(response, response)
         } catch (error: ApiError) {
             UserDataResult.Failure(error)
@@ -350,7 +348,7 @@ class GoTrueApi(
         redirectTo: String?
     ): UserSessionResult {
         return try {
-            val response: Session = tokenClient.post("$url$goTrue/admin/generate_link") {
+            val response: Session = tokenClient.post("$url/admin/generate_link") {
                 body = MagicLinkGenerationBody(type, email, password, data, redirectTo)
             }
             UserSessionResult.SessionSuccess(response)
@@ -360,7 +358,7 @@ class GoTrueApi(
     }
 
     suspend fun getSettings(): Settings {
-        return tokenClient.get("$url$goTrue/settings")
+        return tokenClient.get("$url/settings")
     }
 
     fun auth(): HttpClient = authClient
@@ -430,7 +428,7 @@ class GoTrueApi(
 
                 refreshTokens { unauthorizedResponse: HttpResponse ->
                     // TODO See if tokenClient needs to be authClient instead
-                    refreshTokenInfo = tokenClient.post("$url$goTrue/token") {
+                    refreshTokenInfo = tokenClient.post("$url/token") {
                         body = RefreshAccessTokenBody(session.refreshToken!!)
                     }
                     BearerTokens(

@@ -21,7 +21,7 @@ import io.supabase.types.SupabaseClientOptions
 
 val DEFAULT_OPTIONS = SupabaseClientOptions(
     schema = "public",
-    headers = emptyMap(),
+    headers = headersOf(),
     autoRefreshToken = true,
     persistSession = true,
     detectSessionInUrl = true,
@@ -44,10 +44,10 @@ open class SupabaseClient(
     private val options: SupabaseClientOptions?
 ) {
 
-    private val restUrl = "${supabaseUrl}/rest/v1"
-    private val realtimeUrl = "${supabaseUrl}/realtime/v1".replace("http", "ws")
-    private val authUrl = "${supabaseUrl}/auth/v1"
-    private val storageUrl = "${supabaseUrl}/storage/v1"
+    private val restUrl = "$supabaseUrl/rest/v1"
+    private val realtimeUrl = "$supabaseUrl/realtime/v1".replace("http", "ws")
+    private val authUrl = "$supabaseUrl/auth/v1"
+    private val storageUrl = "$supabaseUrl/storage/v1"
 
     private val settings = SupabaseClientOptions(
         schema = options?.schema ?: DEFAULT_OPTIONS.schema,
