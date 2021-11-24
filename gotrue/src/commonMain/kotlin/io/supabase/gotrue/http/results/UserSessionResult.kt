@@ -1,15 +1,15 @@
 package io.supabase.gotrue.http.results
 
-import io.supabase.gotrue.ApiError
-import io.supabase.gotrue.types.Session
-import io.supabase.gotrue.types.User
+import io.supabase.gotrue.domain.Session
+import io.supabase.gotrue.domain.UserInfo
+import io.supabase.gotrue.http.errors.ApiError
 import kotlinx.serialization.Serializable
 
 @Serializable
 sealed class UserSessionResult {
 
     @Serializable
-    data class UserSuccess(val data: User) : UserSessionResult()
+    data class UserSuccess(val data: UserInfo) : UserSessionResult()
 
     @Serializable
     data class SessionSuccess(val data: Session) : UserSessionResult()

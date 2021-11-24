@@ -1,14 +1,14 @@
 package io.supabase.gotrue.http.results
 
-import io.supabase.gotrue.ApiError
-import io.supabase.gotrue.types.User
+import io.supabase.gotrue.domain.UserInfo
+import io.supabase.gotrue.http.errors.ApiError
 import kotlinx.serialization.Serializable
 
 @Serializable
 sealed class UserResult {
 
     @Serializable
-    data class Success(val data: User) : UserResult()
+    data class Success(val data: UserInfo) : UserResult()
 
     @Serializable
     data class Failure(val error: ApiError) : UserResult()
@@ -18,7 +18,7 @@ sealed class UserResult {
 sealed class UserDataResult {
 
     @Serializable
-    data class Success(val user: User, val data: User) : UserDataResult()
+    data class Success(val user: UserInfo, val data: UserInfo) : UserDataResult()
 
     @Serializable
     data class Failure(val error: ApiError) : UserDataResult()

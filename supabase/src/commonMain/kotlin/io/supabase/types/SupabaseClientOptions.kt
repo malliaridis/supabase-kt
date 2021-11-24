@@ -1,5 +1,6 @@
 package io.supabase.types
 
+import io.ktor.http.*
 import io.supabase.gotrue.types.GoTrueClientOptions
 import io.supabase.gotrue.types.SupportedStorage
 import io.supabase.realtime.RealtimeClientOptions
@@ -17,7 +18,7 @@ data class SupabaseClientOptions(
     /**
      * Optional headers for initializing the client.
      */
-    val headers: Map<String, String>?,
+    val headers: Headers?,
 
     /**
      * Automatically refreshes the token for logged in users.

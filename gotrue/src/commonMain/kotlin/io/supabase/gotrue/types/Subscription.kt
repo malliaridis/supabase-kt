@@ -1,5 +1,7 @@
 package io.supabase.gotrue.types
 
+import io.supabase.gotrue.domain.Session
+
 data class Subscription(
     /**
      * The subscriber UUID. This will be set by the client.

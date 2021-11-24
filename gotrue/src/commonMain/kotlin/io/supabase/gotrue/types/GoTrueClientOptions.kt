@@ -8,6 +8,8 @@ interface SupportedStorage {
     suspend fun removeItem(vararg args: Any): String
 }
 
+expect class LocalStorage() : SupportedStorage
+
 data class GoTrueClientOptions(
     val url: String,
     val headers: Map<String, String> = emptyMap(),

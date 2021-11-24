@@ -1,5 +1,6 @@
 package io.supabase
 
+import io.ktor.client.utils.*
 import io.ktor.http.*
 import io.ktor.http.cio.websocket.*
 import io.supabase.builder.SupabaseQueryBuilder
@@ -140,11 +141,13 @@ open class SupabaseClient(
 
     private fun initSupabaseAuthClient(): SupabaseAuthClient {
 
-        val authHeaders = mutableMapOf(
-            "Authorization" to "Bearer $supabaseKey",
-            "apikey" to supabaseKey
-        )
-        settings.headers?.let { authHeaders.putAll(it) }
+        val authHeaders = buildHeaders {
+            append("Authorization", "Bearer $supabaseKey")
+            append("apikey", supabaseKey)
+            settings.headers?.forEach { header, value ->
+                appendAll(header, value)
+            }
+        }
 
         return GoTrueClient(
             url = authUrl,
@@ -180,7 +183,7 @@ open class SupabaseClient(
 
     private fun getAuthHeaders(): Map<String, String> {
         val headers: MutableMap<String, String> = DEFAULT_HEADERS.toMutableMap()
-        val authBearer = auth.session()?.access_token ?: supabaseKey
+        val authBearer = auth.session()?.accessToken ?: supabaseKey
         headers["apikey"] = supabaseKey
         headers["Authorization"] = "Bearer $authBearer"
         return headers

@@ -1,7 +1,7 @@
 package io.supabase.gotrue.http.results
 
-import io.supabase.gotrue.ApiError
-import io.supabase.gotrue.types.Session
+import io.supabase.gotrue.domain.Session
+import io.supabase.gotrue.http.errors.ApiError
 import kotlinx.serialization.Serializable
 
 @Serializable

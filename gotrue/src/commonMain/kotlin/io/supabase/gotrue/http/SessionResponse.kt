@@ -1,12 +1,12 @@
 package io.supabase.gotrue.http
 
-import io.supabase.gotrue.ApiError
-import io.supabase.gotrue.types.Session
-import io.supabase.gotrue.types.User
+import io.supabase.gotrue.domain.Session
+import io.supabase.gotrue.domain.UserInfo
+import io.supabase.gotrue.http.errors.ApiError
 
 data class SessionResponse(
     val data: Session? = null,
-    val user: User? = null,
+    val user: UserInfo? = null,
     val error: ApiError? = null,
 )
 

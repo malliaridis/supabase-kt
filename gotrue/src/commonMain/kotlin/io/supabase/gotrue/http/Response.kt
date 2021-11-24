@@ -1,8 +1,8 @@
 package io.supabase.gotrue.http
 
-import io.supabase.gotrue.ApiError
-import io.supabase.gotrue.types.Session
-import io.supabase.gotrue.types.User
+import io.supabase.gotrue.domain.Session
+import io.supabase.gotrue.domain.UserInfo
+import io.supabase.gotrue.http.errors.ApiError
 import kotlinx.serialization.Serializable
 
 sealed interface Response {
@@ -17,8 +17,8 @@ sealed interface Response {
     data class DataSessionResponse(val data: Session) : Response
 
     @Serializable
-    data class UserSessionResponse(val user: User? = null, val data: Session? = null) : Response
+    data class UserSessionResponse(val user: UserInfo? = null, val data: Session? = null) : Response
 
     @Serializable
-    data class UserResponse(val data: User? = null) : Response
+    data class UserResponse(val data: UserInfo? = null) : Response
 }

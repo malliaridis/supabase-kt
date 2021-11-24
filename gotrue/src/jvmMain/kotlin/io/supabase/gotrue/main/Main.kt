@@ -1,8 +1,8 @@
 package io.supabase.gotrue.main
 
-import io.ktor.client.*
-import io.supabase.gotrue.domain.UserInfo
-import io.supabase.gotrue.ktor.GoTrueKtorClient
+import io.ktor.http.*
+import io.supabase.gotrue.GoTrueClient
+import io.supabase.gotrue.http.results.SessionResult
 import kotlinx.coroutines.runBlocking
 
 fun main() {
@@ -10,11 +10,24 @@ fun main() {
         val url = System.getenv("SUPABASE_URL")
         val apiKey = System.getenv("SUPABASE_API_KEY")
 
-        val client = GoTrueKtorClient(url, apiKey, HttpClient())
-        val result = client.signIn(System.getenv("SUPABASE_USERNAME"), System.getenv("SUPABASE_PASSWORD"))
+        val headers = headersOf("apikey", apiKey)
+        val client = GoTrueClient(url, headers)
 
-        val userInfo: UserInfo = client.getUser()
-        println("Hello, ${userInfo.email}!")
-        println("Your data is ${userInfo.appMetadata} and your role is ${userInfo.role}.")
+        when (val result =
+            client.signIn(email = System.getenv("SUPABASE_USERNAME"), password = System.getenv("SUPABASE_PASSWORD"))) {
+            is SessionResult.Success -> {
+                println("Hello, ${result.data.user}!")
+                println("Your data is ${result.data.user?.userMetadata} and your role is ${result.data.user?.role}.")
+            }
+            is SessionResult.Failure -> {
+                println("An error occurred.")
+                println("${result.error.status}: ${result.error.message}")
+            }
+        }
+
+        client.signOut()
+
+        if (client.user() != null) println("You should be signed out.")
+        else println("You are signed out, yeah")
     }
 }

@@ -3,8 +3,11 @@ package io.supabase.gotrue
 import io.ktor.client.utils.*
 import io.ktor.http.*
 import io.supabase.gotrue.domain.Provider
+import io.supabase.gotrue.domain.Session
+import io.supabase.gotrue.domain.UserInfo
 import io.supabase.gotrue.helper.*
 import io.supabase.gotrue.http.*
+import io.supabase.gotrue.http.errors.ApiError
 import io.supabase.gotrue.http.results.EmptyResult
 import io.supabase.gotrue.http.results.SessionResult
 import io.supabase.gotrue.http.results.UserDataResult
@@ -23,18 +26,18 @@ import kotlinx.serialization.json.JsonElement
  */
 open class GoTrueClient(
     private val url: String = "http://localhost:9999",
-    private val headers: Headers = buildHeaders { "X-Client-Info" to "gotrue-js/0.0.0" },
+    private val headers: Headers = buildHeaders { "X-Client-Info" to "gotrue-kt/0.0.0" }, // TODO See how to set version efficiently
     private val detectSessionInUrl: Boolean = true,
     internal val autoRefreshToken: Boolean = true,
     internal val persistSession: Boolean = true,
-    internal var localStorage: SupportedStorage? = TODO(),
+    internal var localStorage: SupportedStorage? = LocalStorage(),
     private val cookieOptions: CookieOptions = DEFAULT_COOKIES
 ) {
 
     /**
      * The currently logged in user or null.
      */
-    internal var currentUser: User? = null
+    internal var currentUser: UserInfo? = null
 
     /**
      * The session object for the currently logged in user or null.
@@ -45,10 +48,15 @@ open class GoTrueClient(
      * Namespace for the GoTrue API methods.
      * These can be used for example to get a user from a JWT in a server environment or reset a user's password.
      */
-    var api: GoTrueApi = GoTrueApi(
+    var api = GoTrueApi(
         url = url,
         headers = headers,
-        cookieOptions = cookieOptions
+        onAccessToken = {
+            // TODO Do something when access token generated like storing to local storage
+        },
+        onRefreshToken = {
+            // TODO Do something when token refreshed like updating local storage
+        }
     )
 
     internal var stateChangeEmitters: MutableMap<String, Subscription> = mutableMapOf()
@@ -58,16 +66,17 @@ open class GoTrueClient(
         // TODO Run blocking initAsync
     }
 
-    suspend fun initAsync() {
-        recoverSession()
-        recoverAndRefresh()
-
-        // Handle the OAuth redirect
-        if (detectSessionInUrl && isBrowser() && getParameterByName("access_token") != null) {
-            val result = getSessionFromUrl(true)
-            if (result.error != null) println("Error getting session from URL. ${result.error}")
-        }
-    }
+    // TODO See how to handle URL sessions
+//    suspend fun initAsync() {
+//        recoverSession()
+//        recoverAndRefresh()
+//
+//        // Handle the OAuth redirect
+//        if (detectSessionInUrl && isBrowser() && getParameterByName("access_token") != null) {
+//            val result = getSessionFromUrl(true)
+//            if (result.error != null) println("Error getting session from URL. ${result.error}")
+//        }
+//    }
 
     /**
      * Creates a new user.
@@ -79,41 +88,30 @@ open class GoTrueClient(
      * @param data Optional user metadata.
      */
     suspend fun signUp(
-        email: String?,
-        password: String?,
-        phone: String?,
+        email: String? = null,
+        password: String? = null,
+        phone: String? = null,
         redirectTo: String? = null,
         data: JsonElement? = null
-    ): SignUpResponse {
-        try {
-            removeSession()
+    ): UserSessionResult { // TODO See if the return value is necessary or could be simplified
+        removeSession()
 
-            val response: UserSessionResult = // TODO See if SignUpResponse is correct here
-                if (phone != null && password != null) api.signUpWithPhone(phone, password, data)
-                else api.signUpWithEmail(email!!, password!!, redirectTo, data)
+        val result: UserSessionResult =
+            if (email != null && password != null) api.signUpWithEmail(email, password, redirectTo, data)
+            else if (phone != null && password != null) api.signUpWithPhone(phone, password, data)
+            else UserSessionResult.Failure(ApiError("Invalid parameters provided (client)", 400))
 
-            if (response is UserSessionResult.Failure) throw Exception(response.error.toString())
-
-            var session: Session? = null
-            val user: User?
-
-            when (response) {
-                is UserSessionResult.SessionSuccess -> {
-                    session = response.data
-                    user = session.user as User
-                    saveSession(session)
-                    notifyAllSubscribers(AuthChangeEvent.SIGNED_IN)
-                }
-                is UserSessionResult.UserSuccess -> {
-                    user = response.data
-                }
-                else -> throw Exception("An invalid state was reached (SignUpResponse)")
+        when (result) {
+            is UserSessionResult.SessionSuccess -> {
+                saveSession(result.data)
+                notifyAllSubscribers(AuthChangeEvent.SIGNED_IN)
             }
-
-            return SignUpResponse(data = data, user = user, session = session)
-        } catch (e: Exception) {
-            return SignUpResponse(data = null, user = null, session = null, error = ApiError(e.message!!, -1))
+            is UserSessionResult.UserSuccess -> {
+                TODO("Not implemented yet. See when this case occurs")
+            }
+            is UserSessionResult.Failure -> return result
         }
+        return result
     }
 
     /**
@@ -127,45 +125,45 @@ open class GoTrueClient(
      * @param scopes A space-separated list of scopes granted to the OAuth application.
      */
     suspend fun signIn(
-        email: String?,
-        phone: String?,
-        password: String?,
-        refreshToken: String?,
-        provider: Provider?,
-        redirectTo: String?,
-        scopes: String?
-    ): SignInResponse {
+        email: String? = null,
+        phone: String? = null,
+        password: String? = null,
+        refreshToken: String? = null,
+        provider: Provider? = null,
+        redirectTo: String? = null,
+        scopes: String? = null
+    ): SessionResult {
         try {
             removeSession()
 
             if (email != null && password == null) {
-                val response = api.sendMagicLinkEmail(email, redirectTo)
-                return SignInResponse(error = (response as? EmptyResult.Failure)?.error)
+                TODO("Implement magic link somehow")
+//                val result = api.sendMagicLinkEmail(email, redirectTo)
+//                if (result is EmptyResult.Failure) SessionResult.Failure(result.error)
             }
             if (email != null && password != null) {
                 return handleEmailSignIn(email, password, redirectTo)
             }
             if (phone != null && password == null) {
-                val response = api.sendMobileOTP(phone)
-                return SignInResponse(error = (response as? EmptyResult.Failure)?.error)
+                TODO("Implement mobile OTP somehow")
+//                val response = api.sendMobileOTP(phone)
+//                SignInResponse(error = (response as? EmptyResult.Failure)?.error)
             }
             if (phone != null && password != null) {
                 return handlePhoneSignIn(phone, password)
             }
             if (refreshToken != null) {
-                // currentSession and currentUser will be updated to latest on callRefreshToken using the passed refreshToken
-                val response = callRefreshToken(refreshToken)
-                response.error?.let { throw Exception(response.error.toString()) }
-
-                return SignInResponse(data = currentSession, user = currentUser, session = currentSession)
+                // currentSession and currentUser will be updated to the latest on callRefreshToken using the passed refreshToken
+                return callRefreshToken(refreshToken)
             }
 
             if (provider != null) {
-                return handleProviderSignIn(provider, redirectTo, scopes)
+                TODO("Implement provider sign in")
+//                return handleProviderSignIn(provider, redirectTo, scopes)
             }
-            throw Exception("You must provide either an email, phone number or a third-party provider.")
-        } catch (e: Exception) {
-            return SignInResponse(error = ApiError(e.message!!, -1))
+            throw ApiError("You must provide either an email, phone number or a third-party provider. (client)", 400)
+        } catch (error: ApiError) {
+            return SessionResult.Failure(error)
         }
     }
 
@@ -186,12 +184,12 @@ open class GoTrueClient(
             val response = api.verifyMobileOTP(phone, token, redirectTo)
 
             var session: Session? = null
-            var user: User? = null
+            var user: UserInfo? = null
 
             when (response) {
                 is UserSessionResult.SessionSuccess -> {
                     session = response.data
-                    user = session.user as User
+                    user = session.user as UserInfo
                     saveSession(session)
                     notifyAllSubscribers(AuthChangeEvent.SIGNED_IN)
                 }
@@ -214,7 +212,7 @@ open class GoTrueClient(
      *
      * For server-side management, you can get a user through `auth.api.getUserByCookie()`
      */
-    fun user(): User? {
+    fun user(): UserInfo? {
         return currentUser
     }
 
@@ -228,12 +226,11 @@ open class GoTrueClient(
     /**
      * Force refreshes the session including the user data in case it was updated in a different session.
      */
-    suspend fun refreshSession(): SessionResponse {
+    suspend fun refreshSession(): SessionResult {
         if (currentSession?.accessToken == null) throw Exception("Not logged in.")
 
         // currentSession and currentUser will be updated to the latest on callRefreshToken
-        return callRefreshToken().error?.let { SessionResponse(error = it) }
-            ?: SessionResponse(data = currentSession, user = currentUser)
+        return callRefreshToken()
     }
 
     /**
@@ -242,7 +239,7 @@ open class GoTrueClient(
     suspend fun update(attributes: UserAttributes): UserUpdateResponse {
         val cSession = currentSession ?: return UserUpdateResponse(error = ApiError("No session found.", -1))
 
-        return when (val result = api.updateUser(cSession.accessToken, attributes)) {
+        return when (val result = api.updateUser(attributes)) {
             is UserDataResult.Success -> {
                 saveSession(cSession.copy(user = result.user))
                 notifyAllSubscribers(AuthChangeEvent.USER_UPDATED)
@@ -272,16 +269,17 @@ open class GoTrueClient(
      * @param accessToken a jwt access token
      */
     fun setAuth(accessToken: String): Session {
-        currentSession = Session(
-            providerToken = currentSession?.providerToken,
-            accessToken = accessToken,
-            expiresIn = currentSession?.expiresIn,
-            refreshToken = currentSession?.refreshToken,
-            tokenType = "bearer",
-            user = null
-        )
-
-        return currentSession!!
+//        currentSession = Session(
+//            providerToken = currentSession?.providerToken,
+//            accessToken = accessToken,
+//            expiresIn = currentSession?.expiresIn,
+//            refreshToken = currentSession?.refreshToken,
+//            tokenType = "bearer",
+//            user = null
+//        )
+//
+//        return currentSession!!
+        TODO("Should not be necessary")
     }
 
     /**
@@ -289,42 +287,43 @@ open class GoTrueClient(
      * @param storeSession Optionally store the session in the browser
      */
     suspend fun getSessionFromUrl(storeSession: Boolean = false): SessionResponse {
-        if (!isBrowser()) throw Exception("No browser detected.")
-
-        val errorDescription = getParameterByName("error_description")
-        if (errorDescription != null) throw Exception(errorDescription)
-
-        val providerToken = getParameterByName("provider_token")
-
-        val accessToken = getParameterByName("access_token") ?: throw Exception("No access_token detected.")
-
-        val expiresIn = getParameterByName("expires_in") ?: throw Exception("No expires_in detected.")
-
-        val refreshToken = getParameterByName("refresh_token") ?: throw Exception("No refresh_token detected.")
-
-        val tokenType = getParameterByName("token_type") ?: throw Exception("No token_type detected.")
-
-        return when (val result = api.getUser(accessToken)) {
-            is UserDataResult.Success -> {
-                val session = Session(
-                    providerToken = providerToken,
-                    accessToken = accessToken,
-                    expiresIn = expiresIn.toLong(),
-                    refreshToken = refreshToken,
-                    tokenType = tokenType,
-                    user = result.user,
-                )
-                if (storeSession) {
-                    saveSession(session)
-                    notifyAllSubscribers(AuthChangeEvent.SIGNED_IN)
-                    if (getParameterByName("type") == "recovery") {
-                        notifyAllSubscribers(AuthChangeEvent.PASSWORD_RECOVERY)
-                    }
-                }
-                SessionResponse(data = session)
-            }
-            is UserDataResult.Failure -> SessionResponse(error = result.error)
-        }
+//        if (!isBrowser()) throw Exception("No browser detected.")
+//
+//        val errorDescription = getParameterByName("error_description")
+//        if (errorDescription != null) throw Exception(errorDescription)
+//
+//        val providerToken = getParameterByName("provider_token")
+//
+//        val accessToken = getParameterByName("access_token") ?: throw Exception("No access_token detected.")
+//
+//        val expiresIn = getParameterByName("expires_in") ?: throw Exception("No expires_in detected.")
+//
+//        val refreshToken = getParameterByName("refresh_token") ?: throw Exception("No refresh_token detected.")
+//
+//        val tokenType = getParameterByName("token_type") ?: throw Exception("No token_type detected.")
+//
+//        return when (val result = api.getUser(accessToken)) {
+//            is UserDataResult.Success -> {
+//                val session = Session(
+//                    providerToken = providerToken,
+//                    accessToken = accessToken,
+//                    expiresIn = expiresIn.toLong(),
+//                    refreshToken = refreshToken,
+//                    tokenType = tokenType,
+//                    user = result.user,
+//                )
+//                if (storeSession) {
+//                    saveSession(session)
+//                    notifyAllSubscribers(AuthChangeEvent.SIGNED_IN)
+//                    if (getParameterByName("type") == "recovery") {
+//                        notifyAllSubscribers(AuthChangeEvent.PASSWORD_RECOVERY)
+//                    }
+//                }
+//                SessionResponse(data = session)
+//            }
+//            is UserDataResult.Failure -> SessionResponse(error = result.error)
+//        }
+        TODO("See if there is a use case for this")
     }
 
     /**
@@ -339,7 +338,7 @@ open class GoTrueClient(
         notifyAllSubscribers(AuthChangeEvent.SIGNED_OUT)
 
         accessToken?.let {
-            val response = api.signOut(accessToken)
+            val response = api.signOut()
             return (response as? EmptyResult.Failure)?.error
         }
         return null
@@ -364,32 +363,28 @@ open class GoTrueClient(
         email: String,
         password: String,
         redirectTo: String? = null
-    ): SignInResponse {
-        return when (val result: SessionResult = api.signInWithEmail(email, password, redirectTo)) {
-            is SessionResult.Success -> {
-                if (result.data.user?.confirmedAt != null || result.data.user?.emailConfirmedAt != null) {
-                    saveSession(result.data)
-                    notifyAllSubscribers(AuthChangeEvent.SIGNED_IN)
-                }
+    ): SessionResult {
+        val result: SessionResult = api.signInWithEmail(email, password, redirectTo)
 
-                SignInResponse(data = result.data, user = result.data.user, session = result.data)
+        if (result is SessionResult.Success) {
+            if (result.data.user?.confirmedAt != null || result.data.user?.emailConfirmedAt != null) {
+                saveSession(result.data)
+                notifyAllSubscribers(AuthChangeEvent.SIGNED_IN)
             }
-            is SessionResult.Failure -> SignInResponse(error = result.error)
         }
+        return result
     }
 
-    private suspend fun handlePhoneSignIn(phone: String, password: String): SignInResponse {
-        return when (val result = api.signInWithPhone(phone, password)) {
-            is SessionResult.Success -> {
-                if (result.data.user?.phoneConfirmedAt != null) {
-                    saveSession(result.data)
-                    notifyAllSubscribers(AuthChangeEvent.SIGNED_IN)
-                }
+    private suspend fun handlePhoneSignIn(phone: String, password: String): SessionResult {
+        val result = api.signInWithPhone(phone, password)
 
-                SignInResponse(data = result.data, user = result.data.user, session = result.data)
+        if (result is SessionResult.Success) {
+            if (result.data.user?.phoneConfirmedAt != null) {
+                saveSession(result.data)
+                notifyAllSubscribers(AuthChangeEvent.SIGNED_IN)
             }
-            is SessionResult.Failure -> SignInResponse(error = result.error)
         }
+        return result
     }
 
     private fun handleProviderSignIn(
@@ -439,9 +434,9 @@ open class GoTrueClient(
 
         if (data.expiresAt == null || data.expiresAt < timeNow) {
             if (autoRefreshToken && data.currentSession?.refreshToken != null) {
-                val response = callRefreshToken(data.currentSession.refreshToken)
-                response.error?.let {
-                    println(response.error)
+                val result = callRefreshToken(data.currentSession.refreshToken)
+                if (result is SessionResult.Failure) {
+                    println(result.error)
                     removeSession()
                 }
             } else {
@@ -458,16 +453,17 @@ open class GoTrueClient(
         }
     }
 
-    private suspend fun callRefreshToken(refreshToken: String? = currentSession?.refreshToken): RefreshTokenResponse {
-        refreshToken?.let { RefreshTokenResponse(error = ApiError("No current session.", -1)) }
-
-        return when (val response = api.refreshAccessToken(refreshToken!!)) {
-            is SessionResult.Success -> {
-                saveSession(response.data)
+    private suspend fun callRefreshToken(refreshToken: String? = currentSession?.refreshToken): SessionResult {
+        return refreshToken?.let {
+            SessionResult.Failure(ApiError("No current session. (client)", -1))
+        } ?: run {
+            val result = api.refreshAccessToken(refreshToken!!)
+            if (result is SessionResult.Success) {
+                saveSession(result.data)
                 notifyAllSubscribers(AuthChangeEvent.SIGNED_IN)
-                RefreshTokenResponse(data = response.data)
+                RefreshTokenResponse(data = result.data)
             }
-            is SessionResult.Failure -> RefreshTokenResponse(error = response.error)
+            result
         }
     }
 
