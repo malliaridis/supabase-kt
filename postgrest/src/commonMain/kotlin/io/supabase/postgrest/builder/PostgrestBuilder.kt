@@ -1,97 +1,75 @@
 package io.supabase.postgrest.builder
 
+import io.ktor.client.*
+import io.ktor.client.request.*
 import io.ktor.http.*
-import io.supabase.postgrest.http.PostgrestHttpClient
 import io.supabase.postgrest.http.PostgrestHttpResponse
 import kotlinx.serialization.Serializable
 
-open class PostgrestBuilder<T : @Serializable Any> {
+open class PostgrestBuilder<T : @Serializable Any>(
+    private val url: String,
+    headers: Headers,
+    private val schema: String,
+    private val httpClient: () -> HttpClient
+) {
 
-    val httpClient: PostgrestHttpClient
-    private val url: Url
+    var headers: Headers
+        get() = headersBuilder.build()
+        set(value) = headersBuilder.appendAll(value)
 
-    private var schema: String? = null
-    private var headers: HeadersBuilder = HeadersBuilder()
-    private var method: HttpMethod? = null
-    private var body: Any? = null
-    private var searchParams: MutableMap<String, String> = mutableMapOf()
+    private var headersBuilder = HeadersBuilder()
 
-    constructor(builder: PostgrestBuilder<T>) {
-        this.headers = builder.headers
+    lateinit var method: HttpMethod
+        protected set
+
+    var body: @Serializable Any? = null
+        protected set
+
+    var searchParams: MutableMap<String, String> = mutableMapOf()
+        private set
+
+    constructor(builder: PostgrestBuilder<T>) : this(
+        builder.url,
+        builder.headers,
+        builder.schema,
+        builder.httpClient
+    ) {
         this.method = builder.method
-        this.httpClient = builder.httpClient
-        this.url = builder.url
         this.body = builder.body
-        this.schema = builder.schema
     }
 
-    constructor(url: Url, httpClient: PostgrestHttpClient, headers: Headers, schema: String?) {
-        this.url = url
-        this.httpClient = httpClient
-        this.schema = schema
-
-        this.headers.appendAll(headers)
+    init {
+        headersBuilder.appendAll(headers)
     }
 
     protected fun setHeader(name: String, value: String) {
-        this.headers.append(name, value)
+        this.headersBuilder.append(name, value)
     }
 
     protected fun setSearchParam(name: String, value: String) {
         this.searchParams[name] = value
     }
 
-    protected fun setMethod(method: HttpMethod) {
-        this.method = method
-    }
-
-    protected fun setBody(body: Any?) {
-        this.body = body
-    }
-
-    fun getSearchParams(): Map<String, String> {
-        return searchParams
-    }
-
-    fun getBody(): Any? {
-        return this.body
-    }
-
-    fun getHeaders(): Headers {
-        return this.headers.build()
-    }
-
-    fun getMethod(): HttpMethod? {
-        return this.method
-    }
-
     suspend fun <R : @Serializable Any> execute(): PostgrestHttpResponse<R> {
-        checkNotNull(method) { "Method cannot be null" }
-
         // https://postgrest.org/en/stable/api.html#switching-schemas
-        if (schema != null) {
-            // skip
-            if (this.method in listOf(HttpMethod.Get, HttpMethod.Head)) {
-                setHeader("Accept-Profile", this.schema!!)
-            } else {
-                setHeader(HttpHeaders.ContentType, this.schema!!)
-            }
+
+        if (method in listOf(HttpMethod.Get, HttpMethod.Head)) {
+            headersBuilder.append("Accept-Profile", schema)
+        } else {
+            headersBuilder.append(HttpHeaders.ContentType, schema)
         }
 
-        if (this.method != HttpMethod.Get && this.method != HttpMethod.Head) {
-            setHeader(HttpHeaders.ContentType, ContentType.Application.Json.contentType)
+        if (method != HttpMethod.Get && method != HttpMethod.Head) {
+            headersBuilder.append(HttpHeaders.ContentType, ContentType.Application.Json.contentType)
         }
 
         val uriParams = searchParams.toList().formUrlEncode()
 
-        val uriWithParams = Url("${this.url}?${uriParams}")
-
-        return httpClient.execute(
-            uri = uriWithParams,
-            method = method!!,
-            headers = headers.build(),
-            body = body
-        )
+        return httpClient().request("$url?$uriParams") {
+            method = this@PostgrestBuilder.method
+            headers { appendAll(this@PostgrestBuilder.headers) }
+            this@PostgrestBuilder.body?.let { body = it }
+        }
     }
 
 //    suspend inline fun <reified R : Any> executeAndGetSingle(): R {

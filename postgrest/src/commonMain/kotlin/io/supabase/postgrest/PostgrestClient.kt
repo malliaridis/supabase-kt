@@ -1,12 +1,12 @@
 package io.supabase.postgrest
 
+import io.ktor.client.*
 import io.ktor.client.utils.*
 import io.ktor.http.*
 import io.supabase.postgrest.builder.Count
 import io.supabase.postgrest.builder.PostgrestBuilder
 import io.supabase.postgrest.builder.PostgrestQueryBuilder
 import io.supabase.postgrest.builder.PostgrestRpcBuilder
-import io.supabase.postgrest.http.PostgrestHttpClient
 import kotlinx.serialization.Serializable
 
 /**
@@ -15,13 +15,13 @@ import kotlinx.serialization.Serializable
  * @param[url] URL of the PostgREST endpoint.
  * @param[headers] Custom headers.
  * @param[schema] Postgres schema to switch to.
- * @param[httpClient] Implementation of the [PostgrestHttpClient] interface.
+ * @param[httpClient] HttpClient to use for requests.
  */
 open class PostgrestClient(
-    private val url: Url,
+    private val url: String,
     private var headers: Headers = headersOf(),
-    private val schema: String? = null,
-    val httpClient: PostgrestHttpClient
+    private val schema: String = "public",
+    private val httpClient: () -> HttpClient
 ) {
 
     /**
@@ -43,8 +43,7 @@ open class PostgrestClient(
      * @param[table] The table name to operate on.
      */
     fun <T : @Serializable Any> from(table: String): PostgrestQueryBuilder<T> {
-        val url = Url("$url/$table")
-        return PostgrestQueryBuilder(url, httpClient, headers, schema)
+        return PostgrestQueryBuilder("$url/$table", headers, schema, httpClient)
     }
 
     /**
@@ -54,8 +53,6 @@ open class PostgrestClient(
      * @param[params] The parameters to pass to the function call.
      */
     fun <T : @Serializable Any> rpc(fn: String, params: Any?, head: Boolean?, count: Count?): PostgrestBuilder<T> {
-        val url = Url("${this.url}/rpc/${fn}")
-
-        return PostgrestRpcBuilder<T>(url, httpClient, headers, schema).rpc(params, head, count)
+        return PostgrestRpcBuilder<T>("$url/rpc/$fn", headers, schema, httpClient).rpc(params, head, count)
     }
 }

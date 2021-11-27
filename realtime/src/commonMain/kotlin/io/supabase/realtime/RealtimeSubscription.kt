@@ -37,10 +37,10 @@ class RealtimeSubscription(
             socket.remove(this)
         }
 
-        onError { reason: String ->
+        onError { error ->
             if (isLeaving() || isClosed()) return@onError
 
-            socket.log("channel", "error $topic", reason)
+            socket.log("channel", "error $topic", error.message ?: error.toString())
             state = ChannelState.errored
             rejoinTimer.scheduleTimeout()
         }
@@ -127,7 +127,7 @@ class RealtimeSubscription(
             socket.log("channel", "leave $topic")
             trigger("close", "leave", joinRef())
         }
-        // Destroy joinPush to avoid connection timeouts during unscription phase
+        // Destroy joinPush to avoid connection timeouts during unsubscription phase
         this.joinPush.destroy()
 
         val leavePush = Push(this, ChannelEvent.leave, null, timeout)

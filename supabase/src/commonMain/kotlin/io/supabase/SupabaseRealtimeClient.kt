@@ -53,12 +53,12 @@ class SupabaseRealtimeClient(
      */
     fun on(
         event: SupabaseEventTypes,
-        callback: (payload: SupabaseRealtimePayload<Any>) -> Unit
+        callback: (payload: SupabaseRealtimePayload<*>) -> Unit
     ): SupabaseRealtimeClient {
         subscription.on(event.toString()) { payload: Any?, _ ->
             if (payload is SupabaseRealtimePayload<*>) {
 
-                var enrichedPayload: SupabaseRealtimePayload<Any> = SupabaseRealtimePayload(
+                val enrichedPayload = SupabaseRealtimePayload(
                     schema = payload.schema,
                     table = payload.table,
                     commit_timestamp = payload.commit_timestamp,

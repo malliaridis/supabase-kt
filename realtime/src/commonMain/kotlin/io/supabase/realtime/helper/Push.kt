@@ -91,7 +91,7 @@ class Push(
         }
 
         timeoutTimer = setTimeout({
-            trigger("timeout", {})
+            trigger("timeout") { /* Ignore response */ }
         }, timeout)
     }
 

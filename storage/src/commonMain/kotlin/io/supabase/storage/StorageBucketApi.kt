@@ -1,9 +1,8 @@
 package io.supabase.storage
 
+import io.ktor.client.*
+import io.ktor.client.request.*
 import io.ktor.http.*
-import io.supabase.storage.http.FetchOptions
-import io.supabase.storage.http.StorageHttpClient
-import io.supabase.storage.json.deserialize
 import io.supabase.storage.types.Bucket
 import kotlinx.serialization.Serializable
 
@@ -14,16 +13,20 @@ data class BucketCreateOptions(
 )
 
 open class StorageBucketApi(
+    private val url: String,
     private val headers: Headers,
-    private val httpClient: StorageHttpClient
+    private val httpClient: () -> HttpClient
 ) {
 
     /**
      * Retrieves the details of all Storage buckets within an existing product.
      */
     suspend fun listBuckets(): List<Bucket> {
-        val result = httpClient.get("/bucket", FetchOptions(headers, false))
-        return deserialize(result)
+        return httpClient().get("$url/bucket") {
+            headers {
+                appendAll(this@StorageBucketApi.headers)
+            }
+        }
     }
 
     /**
@@ -32,8 +35,11 @@ open class StorageBucketApi(
      * @param id The unique identifier of the bucket you would like to retrieve.
      */
     suspend fun getBucket(id: String): Bucket {
-        val result = httpClient.get("/bucket/${id}", FetchOptions(headers, false))
-        return deserialize(result)
+        return httpClient().get("$url/bucket/${id}") {
+            headers {
+                appendAll(this@StorageBucketApi.headers)
+            }
+        }
     }
 
     /**
@@ -43,11 +49,13 @@ open class StorageBucketApi(
      * @returns newly created bucket id
      */
     suspend fun createBucket(id: String, public: Boolean = false): String {
-        return httpClient.post(
-            path = "/bucket",
-            options = FetchOptions(headers, true),
+        // TODO Check if this response could be deserialized
+        return httpClient().post("$url/bucket") {
+            headers {
+                appendAll(this@StorageBucketApi.headers)
+            }
             body = BucketCreateOptions(id, public)
-        )
+        }
     }
 
     /**
@@ -56,11 +64,13 @@ open class StorageBucketApi(
      * @param id A unique identifier for the bucket you are creating.
      */
     suspend fun updateBucket(id: String, public: Boolean): String {
-        return httpClient.put(
-            path = "/bucket/${id}",
-            options = FetchOptions(headers, true),
+        // TODO Check if this response could be deserialized
+        return httpClient().put("$url/bucket/${id}") {
+            headers {
+                appendAll(this@StorageBucketApi.headers)
+            }
             body = BucketCreateOptions(id, public)
-        )
+        }
     }
 
     /**
@@ -69,11 +79,11 @@ open class StorageBucketApi(
      * @param id The unique identifier of the bucket you would like to empty.
      */
     suspend fun emptyBucket(id: String): String {
-        return httpClient.post(
-            path = "/bucket/${id}/empty",
-            options = FetchOptions(headers, true),
-            body = null
-        )
+        return httpClient().post("$url/bucket/${id}/empty") {
+            headers {
+                appendAll(this@StorageBucketApi.headers)
+            }
+        }
     }
 
     /**
@@ -83,9 +93,10 @@ open class StorageBucketApi(
      * @param id The unique identifier of the bucket you would like to delete.
      */
     suspend fun deleteBucket(id: String): String {
-        return httpClient.remove(
-            path = "/bucket/${id}",
-            options = FetchOptions(headers, true)
-        )
+        return httpClient().delete("$url/bucket/$id") {
+            headers {
+                appendAll(this@StorageBucketApi.headers)
+            }
+        }
     }
 }

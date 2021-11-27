@@ -1,15 +1,15 @@
 package io.supabase.postgrest.builder
 
+import io.ktor.client.*
 import io.ktor.http.*
-import io.supabase.postgrest.http.PostgrestHttpClient
 import kotlinx.serialization.Serializable
 
 class PostgrestRpcBuilder<T : @Serializable Any>(
-    url: Url,
-    postgrestHttpClient: PostgrestHttpClient,
-    defaultHeaders: Headers = headersOf(),
-    schema: String?
-) : PostgrestBuilder<T>(url, postgrestHttpClient, defaultHeaders, schema) {
+    url: String,
+    headers: Headers = headersOf(),
+    schema: String = "public",
+    httpClient: () -> HttpClient,
+) : PostgrestBuilder<T>(url, headers, schema, httpClient) {
 
     /**
      * Perform a function call.
@@ -20,7 +20,7 @@ class PostgrestRpcBuilder<T : @Serializable Any>(
         count: Count? = null
     ): PostgrestFilterBuilder<T> {
         if (head == true) {
-            setMethod(HttpMethod.Head)
+            method = HttpMethod.Head
 
             if (params != null && params is Map<*, *>) {
                 (params as? Map<String, String>)?.forEach { (key, value) ->
@@ -28,8 +28,8 @@ class PostgrestRpcBuilder<T : @Serializable Any>(
                 }
             }
         } else {
-            setMethod(HttpMethod.Post)
-            setBody(params)
+            method = HttpMethod.Post
+            body = params
         }
 
         if (count != null) {
@@ -43,8 +43,8 @@ class PostgrestRpcBuilder<T : @Serializable Any>(
      * TODO See if this function is necessary.
      */
     internal fun rpc(params: Any?): PostgrestBuilder<T> {
-        setMethod(HttpMethod.Post)
-        setBody(params)
+        method = HttpMethod.Post
+        body = params
         return this
     }
 }

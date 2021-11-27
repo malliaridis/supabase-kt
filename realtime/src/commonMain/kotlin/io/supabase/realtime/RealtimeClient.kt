@@ -8,8 +8,7 @@ import io.ktor.http.*
 import io.ktor.http.cio.websocket.*
 import io.ktor.util.collections.*
 import io.supabase.realtime.helper.*
-import kotlinx.coroutines.cancelAndJoin
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import kotlinx.serialization.*
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
@@ -75,19 +74,19 @@ data class MessagePayload(
 )
 
 data class StateChangeCallbacks(
-    val open: MutableList<() -> Unit>,
-    val close: MutableList<(any: Any?) -> Unit>,
-    val error: MutableList<(error: Exception) -> Unit>,
-    val message: MutableList<(msg: Any) -> Unit>
+    val open: MutableList<() -> Unit> = mutableListOf(),
+    val close: MutableList<(any: Any?) -> Unit> = mutableListOf(),
+    val error: MutableList<(error: Exception) -> Unit> = mutableListOf(),
+    val message: MutableList<(msg: Any) -> Unit> = mutableListOf()
 )
 
 /**
  * Initializes the Socket
  *
- * @param endpoint The string WebSocket endpoint, ie, "ws://example.com/socket", "wss://example.com", "/socket" (inherited host & protocol)
+ * @param url The string WebSocket endpoint, ie, "ws://example.com/socket", "wss://example.com", "/socket" (inherited host & protocol)
  */
 open class RealtimeClient(
-    private val endpoint: String,
+    private val url: String,
     internal val options: RealtimeClientOptions?
 ) {
 
@@ -103,6 +102,7 @@ open class RealtimeClient(
     }
     private val longPollerTimeout: Long = options?.longPollerTimeout ?: 20000
 
+    private var websocketJob: Job? = null
     var channels: MutableList<RealtimeSubscription> = mutableListOf()
     private var heartbeatTimer: Timer? = null
     private var pendingHeartbeatRef: String? = null
@@ -119,12 +119,7 @@ open class RealtimeClient(
 
     private var sendBuffer: ConcurrentList<suspend () -> Unit?> = ConcurrentList()
 
-    private val stateChangeCallbacks = StateChangeCallbacks(
-        mutableListOf(),
-        mutableListOf(),
-        mutableListOf(),
-        mutableListOf()
-    )
+    private val stateChangeCallbacks = StateChangeCallbacks()
 
     internal fun reconnectAfterMs(tries: Int): Long {
         return options?.reconnectAfterMs?.invoke(tries)
@@ -135,37 +130,41 @@ open class RealtimeClient(
     /**
      * Connects the socket.
      */
-    suspend fun connect() {
-        if (conn != null) return
+    fun connect() {
+        if (websocketJob != null) return
+        // if (conn != null) return
 
         socketState = SocketState.connecting
-        httpClient.webSocket(
-            method = HttpMethod.Get,
-            host = endpoint,
-            port = 8080,
-            path = "/websocket?vsn=1.0.0",
-            request = {
-                headers { appendAll(this@RealtimeClient.headers) }
-                timeout {
-                    // connectTimeoutMillis = longPollerTimeout
-                    socketTimeoutMillis = longPollerTimeout
+        websocketJob = CoroutineScope(Dispatchers.Default).launch {
+            httpClient.webSocket(
+                method = HttpMethod.Get,
+                host = url,
+                port = 8080,
+                path = "/websocket?vsn=1.0.0",
+                request = {
+                    headers { appendAll(this@RealtimeClient.headers) }
+                    timeout {
+                        // connectTimeoutMillis = longPollerTimeout
+                        socketTimeoutMillis = longPollerTimeout
+                    }
                 }
+            ) {
+                conn = this
+                onConnOpen()
+                socketState = SocketState.open
+
+                val messageOutputRoutine = launch { outputMessages() }
+                val userInputRoutine = launch { inputMessages() }
+
+                userInputRoutine.join()
+                socketState = SocketState.closing
+                messageOutputRoutine.cancelAndJoin()
             }
-        ) {
-            conn = this
-            onConnOpen()
-            socketState = SocketState.open
 
-            val messageOutputRoutine = launch { outputMessages() }
-            val userInputRoutine = launch { inputMessages() }
-
-            userInputRoutine.join()
-            socketState = SocketState.closing
-            messageOutputRoutine.cancelAndJoin()
+            socketState = SocketState.closed
+            onConnClose(null)
+            websocketJob = null
         }
-
-        socketState = SocketState.closed
-        onConnClose(null)
     }
 
     /**
@@ -310,7 +309,7 @@ open class RealtimeClient(
     }
 
     private suspend fun onConnOpen() {
-        log("transport", "connected to $endpoint$")
+        log("transport", "connected to $url$")
         flushSendBuffer()
         reconnectTimer.reset()
         resetHeartbeat()

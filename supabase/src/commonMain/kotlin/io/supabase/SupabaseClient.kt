@@ -1,33 +1,22 @@
 package io.supabase
 
+import io.ktor.client.*
 import io.ktor.client.utils.*
 import io.ktor.http.*
 import io.ktor.http.cio.websocket.*
 import io.supabase.builder.SupabaseQueryBuilder
 import io.supabase.gotrue.GoTrueClient
+import io.supabase.gotrue.types.SupportedStorage
 import io.supabase.http.SupabaseAuthClient
-import io.supabase.http.SupabaseHttpClient
 import io.supabase.postgrest.PostgrestClient
-import io.supabase.postgrest.PostgrestDefaultClient
 import io.supabase.postgrest.builder.Count
 import io.supabase.postgrest.builder.PostgrestBuilder
 import io.supabase.realtime.RealtimeClient
-import io.supabase.realtime.RealtimeDefaultClient
+import io.supabase.realtime.RealtimeClientOptions
 import io.supabase.realtime.RealtimeSubscription
 import io.supabase.realtime.helper.DEFAULT_HEADERS
 import io.supabase.storage.StorageClient
-import io.supabase.storage.StorageDefaultClient
-import io.supabase.types.SupabaseClientOptions
-
-val DEFAULT_OPTIONS = SupabaseClientOptions(
-    schema = "public",
-    headers = headersOf(),
-    autoRefreshToken = true,
-    persistSession = true,
-    detectSessionInUrl = true,
-    localStorage = null,
-    realtime = null
-)
+import kotlinx.serialization.Serializable
 
 /**
  *  Main client and entry point for using Supabase client.
@@ -41,23 +30,52 @@ open class SupabaseClient(
      * The unique Supabase Key which is supplied when you create a new project in your project dashboard.
      */
     private val supabaseKey: String,
-    private val options: SupabaseClientOptions?
+
+    /**
+     * The Postgres schema which your tables belong to. Must be on the list of exposed schemas in Supabase. Defaults to 'public'.
+     */
+    private val schema: String = "public",
+
+    /**
+     * Optional headers for initializing the client.
+     */
+    private val headers: Headers = headersOf(),
+
+    /**
+     * Automatically refreshes the token for logged in users.
+     */
+    private val autoRefreshToken: Boolean = true,
+
+    /**
+     * Whether to persist a logged-in session to storage.
+     */
+    private val persistSession: Boolean = true,
+
+    /**
+     * Detect a session from the URL. Used for OAuth login callbacks.
+     */
+    private val detectSessionInUrl: Boolean = true,
+
+    /**
+     * A storage provider. Used to store the logged-in session.
+     */
+    private val localStorage: SupportedStorage? = null,
+
+    /**
+     * Options passed to the realtime instance
+     */
+    private val realtimeOptions: RealtimeClientOptions? = null,
+
+    /**
+     * HttpClient to use for requests.
+     */
+    private val httpClient: () -> HttpClient = { HttpClient() }
 ) {
 
     private val restUrl = "$supabaseUrl/rest/v1"
     private val realtimeUrl = "$supabaseUrl/realtime/v1".replace("http", "ws")
     private val authUrl = "$supabaseUrl/auth/v1"
     private val storageUrl = "$supabaseUrl/storage/v1"
-
-    private val settings = SupabaseClientOptions(
-        schema = options?.schema ?: DEFAULT_OPTIONS.schema,
-        headers = options?.headers ?: DEFAULT_OPTIONS.headers,
-        autoRefreshToken = options?.autoRefreshToken ?: DEFAULT_OPTIONS.autoRefreshToken,
-        persistSession = options?.persistSession ?: DEFAULT_OPTIONS.persistSession,
-        detectSessionInUrl = options?.detectSessionInUrl ?: DEFAULT_OPTIONS.detectSessionInUrl,
-        localStorage = options?.localStorage ?: DEFAULT_OPTIONS.localStorage,
-        realtime = options?.realtime ?: DEFAULT_OPTIONS.realtime
-    )
 
     /**
      * Supabase Auth allows you to create and manage user sessions for access to data that is secured by access policies.
@@ -68,13 +86,10 @@ open class SupabaseClient(
 
     /**
      * Supabase Storage allows you to manage user-generated content, such as photos or videos.
-     * TODO Replace fetch with httpClient
      */
     private val storage: StorageClient = initStorageClient()
 
     private val postgrest: PostgrestClient = initPostgRESTClient()
-
-    private val httpClient: SupabaseHttpClient = TODO()
 
     /**
      * Perform a table operation.
@@ -83,12 +98,12 @@ open class SupabaseClient(
      */
     fun <T : Any> from(table: String): SupabaseQueryBuilder<T> {
         return SupabaseQueryBuilder(
-            url = Url("${restUrl}/${table}"),
+            url = "${restUrl}/$table",
             headers = getAuthHeaders(),
-            schema = settings.schema,
-            postgrest = postgrest.httpClient,
+            schema = schema,
+            table = table,
             realtime = realtime,
-            table = table
+            httpClient = httpClient
         )
     }
 
@@ -101,15 +116,12 @@ open class SupabaseClient(
      * @param count  Count algorithm to use to count rows in a table.
      *
      */
-    fun <T : Any> rpc(
+    fun <T : @Serializable Any> rpc(
         fn: String,
         params: Any?,
         head: Boolean = false,
         count: Count? = null
     ): PostgrestBuilder<T> {
-        // TODO See if same client should be returned or always a new one should be created
-//        val rest = initPostgRESTClient()
-//        return rest.rpc(fn, params, head, count)
         return postgrest.rpc(fn, params, head, count)
     }
 
@@ -144,9 +156,7 @@ open class SupabaseClient(
         val authHeaders = buildHeaders {
             append("Authorization", "Bearer $supabaseKey")
             append("apikey", supabaseKey)
-            settings.headers?.forEach { header, value ->
-                appendAll(header, value)
-            }
+            appendAll(this@SupabaseClient.headers)
         }
 
         return GoTrueClient(
@@ -161,25 +171,11 @@ open class SupabaseClient(
         )
     }
 
-    private fun initStorageClient(): StorageClient {
-        return StorageDefaultClient(storageUrl, getAuthHeaders())
-    }
+    private fun initStorageClient() = StorageClient(storageUrl, getAuthHeaders(), httpClient)
 
-    private fun initRealtimeClient(): RealtimeClient {
-        return RealtimeDefaultClient(
-            url = Url(realtimeUrl),
-            options = settings.realtime,
-            apiKey = supabaseKey
-        )
-    }
+    private fun initRealtimeClient() = RealtimeClient(realtimeUrl, realtimeOptions)
 
-    private fun initPostgRESTClient(): PostgrestClient {
-        return PostgrestDefaultClient(
-            url = Url(restUrl),
-            headers = getAuthHeaders(),
-            schema = settings.schema
-        )
-    }
+    private fun initPostgRESTClient() = PostgrestClient(restUrl, getAuthHeaders(), schema, httpClient)
 
     private fun getAuthHeaders(): Headers {
         val authBearer = auth.session()?.accessToken ?: supabaseKey
@@ -191,7 +187,7 @@ open class SupabaseClient(
         return headers
     }
 
-    private suspend fun closeChannel(subscription: RealtimeSubscription) {
+    private fun closeChannel(subscription: RealtimeSubscription) {
         subscription.unsubscribe()
         realtime.remove(subscription)
     }

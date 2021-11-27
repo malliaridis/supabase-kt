@@ -1,25 +1,19 @@
 package io.supabase.storage
 
+import io.ktor.client.*
+import io.ktor.client.call.*
+import io.ktor.client.request.*
 import io.ktor.client.request.forms.*
+import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.http.content.*
 import io.ktor.utils.io.core.*
-import io.supabase.storage.http.FetchOptions
-import io.supabase.storage.http.StorageHttpClient
-import io.supabase.storage.json.deserialize
+import io.supabase.storage.http.bodies.FileObjectRemoveBody
+import io.supabase.storage.http.bodies.SignedUrlBody
+import io.supabase.storage.http.responses.FileObjectResult
 import io.supabase.storage.types.FileObject
 import io.supabase.storage.types.FileOptions
 import io.supabase.storage.types.SearchOptions
-import io.supabase.storage.types.SortBy
-
-val DEFAULT_SEARCH_OPTIONS = SearchOptions(
-    limit = 100,
-    offset = 0,
-    sortBy = SortBy(
-        column = "name",
-        order = "asc"
-    )
-)
 
 val DEFAULT_FILE_OPTIONS = FileOptions(
     cacheControl = "3600",
@@ -27,19 +21,11 @@ val DEFAULT_FILE_OPTIONS = FileOptions(
     upsert = false
 )
 
-data class SignedUrlResponse(
-    val data: String,
-    val signedUrl: String
-)
-
-data class PublicUrlResponse(
-    val data: String,
-    val publicUrl: String
-)
-
 class StorageFileApi(
     private val bucketId: String,
-    private val storageHttpClient: StorageHttpClient
+    private val url: String,
+    private val headers: Headers,
+    private val httpClient: () -> HttpClient
 ) {
 
     /**
@@ -64,7 +50,6 @@ class StorageFileApi(
             throw Error("Invalid method. Must bee Post or Put.")
         }
 
-
         val options = FileOptions(
             cacheControl = fileOptions?.cacheControl ?: DEFAULT_FILE_OPTIONS.cacheControl,
             contentType = fileOptions?.contentType ?: DEFAULT_FILE_OPTIONS.contentType,
@@ -79,7 +64,7 @@ class StorageFileApi(
         //   ...(method === 'POST' && { 'x-upsert': String(options.upsert as boolean) }),
         // }
 
-        val body: Any = when (fileBody) {
+        val requestBody: Any = when (fileBody) {
             is PartData.BinaryItem -> {
                 // TODO Handle properly blob
                 FormDataContent(
@@ -111,17 +96,19 @@ class StorageFileApi(
         val finalPath = getFinalPath(path)
 
         if (method == HttpMethod.Post) {
-            storageHttpClient.post(
-                path = "/object/${finalPath}",
-                body = body,
-                options = FetchOptions(headers, true)
-            )
+            httpClient().post<String>("$url/object/$finalPath") {
+                headers {
+                    appendAll(this@StorageFileApi.headers)
+                }
+                body = requestBody
+            }
         } else {
-            storageHttpClient.put(
-                path = "/object/${finalPath}",
-                body = body,
-                options = FetchOptions(headers, true)
-            )
+            httpClient().put<String>("$url/object/$finalPath") {
+                headers {
+                    appendAll(this@StorageFileApi.headers)
+                }
+                body = requestBody
+            }
         }
 
         return finalPath
@@ -173,15 +160,16 @@ class StorageFileApi(
         fromPath: String,
         toPath: String
     ): String {
-        return storageHttpClient.post(
-            path = "/object/move",
+        return httpClient().post("$url/object/move") {
+            headers {
+                appendAll(this@StorageFileApi.headers)
+            }
             body = formData {
                 append("bucketId", bucketId)
                 append("sourceKey", fromPath)
                 append("destinationKey", toPath)
-            },
-            options = FetchOptions(headersOf(), true)
-        )
+            }
+        }
     }
 
     /**
@@ -195,14 +183,13 @@ class StorageFileApi(
         expiresIn: Long
     ): String {
         val finalPath = this.getFinalPath(path)
-        val data = storageHttpClient.post(
-            path = "/object/sign/${finalPath}",
-            options = FetchOptions(headersOf(), true),
-            body = null
-            // TODO See where to pass expiresIn
-//            ??? = { expiresIn }
-        )
-        return "${this.storageHttpClient.url}${data}" // Signed URL
+        val data = httpClient().post<String>("$url/object/sign/$finalPath") {
+            headers {
+                appendAll(this@StorageFileApi.headers)
+            }
+            body = SignedUrlBody(expiresIn)
+        }
+        return "$url$data" // Signed URL
     }
 
     /**
@@ -212,8 +199,12 @@ class StorageFileApi(
      */
     suspend fun download(path: String): ByteArray {
         val finalPath = this.getFinalPath(path)
-        val res = storageHttpClient.get(path = "/object/${finalPath}", FetchOptions(headersOf(), true))
-        return res.toByteArray()
+        val response: HttpResponse = httpClient().get("$url/object/$finalPath") {
+            headers {
+                appendAll(this@StorageFileApi.headers)
+            }
+        }
+        return response.receive()
     }
 
     /**
@@ -222,8 +213,7 @@ class StorageFileApi(
      * @param path The file path to be downloaded, including the path and file name. For example `folder/image.png`.
      */
     fun getPublicUrl(path: String): String {
-        val _path = this.getFinalPath(path)
-        return "${this.storageHttpClient.url}/object/public/${_path}"
+        return "$url/object/public/${getFinalPath(path)}"
     }
 
     /**
@@ -231,14 +221,19 @@ class StorageFileApi(
      *
      * @param paths An array of files to be deletes, including the path and file name. For example [`folder/image.png`].
      */
-    // suspend fun remove(paths: List<String>): List<FileObject> {
-    //    val result = storageHttpClient.remove(
-    //        path = "/object/${this.bucketId}",
-    //        files = paths,
-    //        options = FetchOptions(headers, true)
-    //    )
-    //    return deserialize(result)
-    //}
+    suspend fun remove(paths: List<String>): FileObjectResult {
+        return try {
+            val response: List<FileObject> = httpClient().delete("$url/object/$bucketId") {
+                headers {
+                    appendAll(this@StorageFileApi.headers)
+                }
+                body = FileObjectRemoveBody(paths)
+            }
+            FileObjectResult.Success(response)
+        } catch (e: Exception) {
+            FileObjectResult.Failure(e.message ?: e.toString())
+        }
+    }
 
     /**
      * Get file metadata
@@ -272,32 +267,23 @@ class StorageFileApi(
 
     /**
      * Lists all the files within a bucket.
-     * @param path The folder path.
      * @param options Search options, including `limit`, `offset`, and `sortBy`.
-     * @param parameters Fetch parameters, currently only supports `signal`, which is an AbortController's signal
      */
-    suspend fun list(
-        path: String?,
-        options: SearchOptions?
-    ): List<FileObject> {
-        // TODO See of to include prefix
-        // val body = { ...DEFAULT_SEARCH_OPTIONS, ...options, prefix: path || '' }
-        val body = SearchOptions(
-            limit = options?.limit ?: DEFAULT_SEARCH_OPTIONS.limit,
-            offset = options?.offset ?: DEFAULT_SEARCH_OPTIONS.offset,
-            sortBy = options?.sortBy ?: DEFAULT_SEARCH_OPTIONS.sortBy
-        )
-        // TODO See why path is not used
-
-        val result = storageHttpClient.post(
-            path = "/object/list/${this.bucketId}", // TODO See if it is possible to append URL path with path parameter
-            body = body,
-            options = null
-        )
-        return deserialize(result)
+    suspend fun list(options: SearchOptions = SearchOptions()): FileObjectResult {
+        return try {
+            val objects: List<FileObject> = httpClient().post("$url/object/list/$bucketId") {
+                headers {
+                    appendAll(this@StorageFileApi.headers)
+                }
+                body = options
+            }
+            FileObjectResult.Success(objects)
+        } catch (error: Exception) {
+            FileObjectResult.Failure(error.message ?: error.toString())
+        }
     }
 
     private fun getFinalPath(path: String): String {
-        return "${this.bucketId}/${path}"
+        return "$bucketId/$path"
     }
 }

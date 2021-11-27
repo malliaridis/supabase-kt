@@ -1,15 +1,15 @@
 package io.supabase.postgrest.builder
 
+import io.ktor.client.*
 import io.ktor.http.*
-import io.supabase.postgrest.http.PostgrestHttpClient
 import kotlinx.serialization.Serializable
 
 open class PostgrestQueryBuilder<T : @Serializable Any>(
-    url: Url,
-    postgrestHttpClient: PostgrestHttpClient,
+    url: String,
     defaultHeaders: Headers,
-    schema: String?
-) : PostgrestBuilder<T>(url, postgrestHttpClient, defaultHeaders, schema) {
+    schema: String = "public",
+    httpClient: () -> HttpClient
+) : PostgrestBuilder<T>(url, defaultHeaders, schema, httpClient) {
 
     companion object {
         const val HEADER_PREFER = "Prefer"
@@ -28,9 +28,9 @@ open class PostgrestQueryBuilder<T : @Serializable Any>(
         count: Count? = null
     ): PostgrestFilterBuilder<T> {
         if (head) {
-            setMethod(HttpMethod.Head)
+            method = HttpMethod.Head
         } else {
-            setMethod(HttpMethod.Get)
+            method = HttpMethod.Get
         }
 
         val cleanedColumns = cleanColumns(columns)
@@ -59,13 +59,13 @@ open class PostgrestQueryBuilder<T : @Serializable Any>(
         returning: Returning = Returning.REPRESENTATION,
         count: Count? = null
     ): PostgrestFilterBuilder<T> {
-        setMethod(HttpMethod.Post)
+        method = HttpMethod.Post
 
         val preferHeaders = mutableListOf("return=${returning.identifier}")
         if (upsert) preferHeaders.add("resolution=merge-duplicates")
 
         if (upsert && onConflict != null) setSearchParam("on_conflict", onConflict)
-        setBody(values)
+        body = values
 
         if (count != null) {
             preferHeaders.add("count=${count.identifier}")
@@ -105,8 +105,8 @@ open class PostgrestQueryBuilder<T : @Serializable Any>(
         returning: Returning = Returning.REPRESENTATION,
         count: Count? = null
     ): PostgrestFilterBuilder<T> {
-        setMethod(HttpMethod.Patch)
-        setBody(value)
+        method = HttpMethod.Patch
+        body = value
 
         val prefersHeaders = mutableListOf("return=${returning.identifier}")
 
@@ -124,7 +124,7 @@ open class PostgrestQueryBuilder<T : @Serializable Any>(
      * @param[returning] If `true`, return the deleted row(s) in the response.
      */
     fun delete(returning: Returning = Returning.REPRESENTATION, count: Count? = null): PostgrestFilterBuilder<T> {
-        setMethod(HttpMethod.Delete)
+        method = HttpMethod.Delete
 
         val prefersHeaders = mutableListOf("return=${returning.identifier}")
         if (count != null) {

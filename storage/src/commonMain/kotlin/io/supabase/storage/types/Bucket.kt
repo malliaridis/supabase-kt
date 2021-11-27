@@ -1,5 +1,8 @@
 package io.supabase.storage.types
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class Bucket(
     val id: String,
     val name: String,

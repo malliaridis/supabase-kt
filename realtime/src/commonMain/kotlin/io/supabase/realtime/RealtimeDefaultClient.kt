@@ -1,12 +1,10 @@
 package io.supabase.realtime
 
-import io.ktor.http.*
-
 class RealtimeDefaultClient(
-    url: Url,
+    url: String,
     options: RealtimeClientOptions?,
     val apiKey: String
 ) : RealtimeClient(
-    endpoint = url.toString(),
+    url = url,
     options = options
 )
