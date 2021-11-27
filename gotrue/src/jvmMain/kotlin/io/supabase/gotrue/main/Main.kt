@@ -1,5 +1,6 @@
 package io.supabase.gotrue.main
 
+import io.ktor.client.*
 import io.ktor.http.*
 import io.supabase.gotrue.GoTrueClient
 import io.supabase.gotrue.http.results.SessionResult
@@ -11,7 +12,8 @@ fun main() {
         val apiKey = System.getenv("SUPABASE_API_KEY")
 
         val headers = headersOf("apikey", apiKey)
-        val client = GoTrueClient(goTrueUrl, headers)
+        val httpClient = HttpClient()
+        val client = GoTrueClient(url = goTrueUrl, headers = headers, httpClient = { httpClient })
 
         when (val result =
             client.signIn(email = System.getenv("SUPABASE_USERNAME"), password = System.getenv("SUPABASE_PASSWORD"))) {

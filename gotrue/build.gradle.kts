@@ -50,13 +50,10 @@ kotlin {
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))
+                implementation("io.ktor:ktor-client-mock:${rootProject.extra["ktorVersion"]}")
             }
         }
-        val jvmMain by getting {
-            dependencies {
-                implementation("io.ktor:ktor-client-cio:${rootProject.extra["ktorVersion"]}")
-            }
-        }
+        val jvmMain by getting
         // TODO Add further ktor client implementations for the other platforms
         val jvmTest by getting
         val jsMain by getting

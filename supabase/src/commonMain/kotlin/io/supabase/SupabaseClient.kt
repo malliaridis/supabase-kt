@@ -25,7 +25,8 @@ import kotlinx.serialization.Serializable
  * @param supabaseKey The unique Supabase Key which is supplied when you create a new project in your project dashboard.
  */
 open class SupabaseClient(
-    private val supabaseUrl: Url,
+    private val supabaseUrl: String,
+
     /**
      * The unique Supabase Key which is supplied when you create a new project in your project dashboard.
      */
@@ -168,6 +169,7 @@ open class SupabaseClient(
 //            detectSessionInUrl = detectSessionInUrl,
 //            localStorage = localStorage,
             // fetch: this.fetch, // TODO See if there is a client necessary to pass
+            httpClient = httpClient
         )
     }
 

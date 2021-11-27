@@ -1,5 +1,6 @@
 package io.supabase.gotrue
 
+import io.ktor.client.*
 import io.ktor.client.utils.*
 import io.ktor.http.*
 import io.supabase.gotrue.domain.Provider
@@ -28,21 +29,22 @@ open class GoTrueClient(
     private val url: String = "http://localhost:9999",
     private val headers: Headers = buildHeaders { "X-Client-Info" to "gotrue-kt/0.0.0" }, // TODO See how to set version efficiently
     private val detectSessionInUrl: Boolean = true,
-    internal val autoRefreshToken: Boolean = true,
-    internal val persistSession: Boolean = true,
-    internal var localStorage: SupportedStorage? = LocalStorage(),
-    private val cookieOptions: CookieOptions = DEFAULT_COOKIES
+    private val autoRefreshToken: Boolean = true,
+    private val persistSession: Boolean = true,
+    private var localStorage: SupportedStorage? = LocalStorage(),
+    private val cookieOptions: CookieOptions = DEFAULT_COOKIES,
+    private val httpClient: () -> HttpClient
 ) {
 
     /**
      * The currently logged in user or null.
      */
-    internal var currentUser: UserInfo? = null
+    private var currentUser: UserInfo? = null
 
     /**
      * The session object for the currently logged in user or null.
      */
-    internal var currentSession: Session? = null
+    private var currentSession: Session? = null
 
     /**
      * Namespace for the GoTrue API methods.
@@ -56,15 +58,12 @@ open class GoTrueClient(
         },
         onRefreshToken = {
             // TODO Do something when token refreshed like updating local storage
-        }
+        },
+        httpClient = httpClient
     )
 
-    internal var stateChangeEmitters: MutableMap<String, Subscription> = mutableMapOf()
-    internal var refreshTokenTimer: Timer? = null
-
-    fun initSync() {
-        // TODO Run blocking initAsync
-    }
+    private var stateChangeEmitters: MutableMap<String, Subscription> = mutableMapOf()
+    private var refreshTokenTimer: Timer? = null
 
     // TODO See how to handle URL sessions
 //    suspend fun initAsync() {

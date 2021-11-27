@@ -25,21 +25,22 @@ class GoTrueApi(
     private val url: String,
     private val headers: Headers,
     onAccessToken: ((tokenInfo: Session) -> Unit)? = null,
-    onRefreshToken: ((tokenInfo: Session) -> Unit)? = null
+    onRefreshToken: ((tokenInfo: Session) -> Unit)? = null,
+    httpClient: () -> HttpClient
 ) {
 
     /**
      * The client to which to apply the auth tokens for authenticated API calls.
      */
-    private var tokenClient: HttpClient = HttpClient()
+    private var tokenClient: HttpClient
 
     /**
      * A client that is handling unauthorized requests, e.g. for sign-in requests or password recovery.
      */
-    private var authClient: HttpClient = tokenClient // TODO See if the tokenClient can be used
+    private var authClient: HttpClient
 
     init {
-        tokenClient = tokenClient.config {
+        tokenClient = httpClient().config {
             defaultRequest {
                 headers {
                     appendAll(this@GoTrueApi.headers)
@@ -52,6 +53,8 @@ class GoTrueApi(
             }
             installCustomResponseHandlers()
         }
+
+        authClient = tokenClient
     }
 
     /**

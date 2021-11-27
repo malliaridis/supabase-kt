@@ -4,7 +4,7 @@ val globalVersion by rootProject.extra { "0.0.1" }
 
 val ktorVersion by rootProject.extra { "1.6.5" }
 val datetimeVersion by rootProject.extra { "0.3.1" }
-val coroutineVersion by rootProject.extra { "1.5.2" }
+val coroutineVersion by rootProject.extra { "1.6.0-RC" }
 
 buildscript {
     repositories {
