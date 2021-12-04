@@ -454,8 +454,6 @@ open class GoTrueClient(
 
     private suspend fun callRefreshToken(refreshToken: String? = currentSession?.refreshToken): SessionResult {
         return refreshToken?.let {
-            SessionResult.Failure(ApiError("No current session. (client)", -1))
-        } ?: run {
             val result = api.refreshAccessToken(refreshToken!!)
             if (result is SessionResult.Success) {
                 saveSession(result.data)
@@ -463,7 +461,7 @@ open class GoTrueClient(
                 RefreshTokenResponse(data = result.data)
             }
             result
-        }
+        } ?: SessionResult.Failure(ApiError("No current session. (client)", -1))
     }
 
     private fun notifyAllSubscribers(event: AuthChangeEvent) {

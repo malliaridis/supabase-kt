@@ -4,16 +4,19 @@ import io.ktor.client.*
 import io.ktor.client.engine.mock.*
 import io.ktor.client.features.json.*
 import io.ktor.client.features.json.serializer.*
+import io.ktor.client.request.*
 import io.ktor.http.*
 import io.supabase.gotrue.domain.AppMetadata
 import io.supabase.gotrue.domain.Session
 import io.supabase.gotrue.domain.UserInfo
+import io.supabase.gotrue.http.bodies.RefreshAccessTokenBody
 import io.supabase.gotrue.http.bodies.SignInEmailBody
 import io.supabase.gotrue.http.errors.ServerError
 import kotlinx.datetime.Clock
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlin.random.Random
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlin.test.fail
@@ -27,6 +30,16 @@ const val apiKey = "fakeApiKey"
  * Dummy email
  */
 const val email = "my@email.com"
+
+/**
+ * Dummy access token
+ */
+private var accessToken = ""
+
+/**
+ * Dummy refresh token
+ */
+private var refreshToken = ""
 
 /**
  * Dummy password
@@ -52,21 +65,9 @@ fun getMockClient(): HttpClient {
                             "Content type should be application/json"
                         )
 
-                        val body =
-                            Json.decodeFromString<SignInEmailBody>(request.body.toByteArray().decodeToString())
-                        if (email == body.email && password == body.password) {
-                            respond(
-                                content = Json.encodeToString(generateSession()),
-                                status = HttpStatusCode.OK,
-                                headers = headersOf(HttpHeaders.ContentType, "application/json")
-                            )
-                        } else {
-                            respond(
-                                content = Json.encodeToString(generateError()),
-                                status = HttpStatusCode.Unauthorized,
-                                headers = headersOf(HttpHeaders.ContentType, "application/json")
-                            )
-                        }
+                        if (request.url.parameters.contains("grant_type", "refresh_token")) {
+                            handleRefresh(request)
+                        } else handleSignIn(request)
                     }
                     "/auth/v1/user" -> {
                         val authHeader = request.headers["Authorization"]
@@ -107,6 +108,48 @@ fun getMockClient(): HttpClient {
     }
 }
 
+private suspend fun MockRequestHandleScope.handleSignIn(request: HttpRequestData): HttpResponseData {
+    val body = Json.decodeFromString<SignInEmailBody>(request.body.toByteArray().decodeToString())
+    return if (email == body.email && password == body.password) {
+        respond(
+            content = Json.encodeToString(generateSession()),
+            status = HttpStatusCode.OK,
+            headers = headersOf(HttpHeaders.ContentType, "application/json")
+        )
+    } else {
+        respond(
+            content = Json.encodeToString(generateError()),
+            status = HttpStatusCode.Unauthorized,
+            headers = headersOf(HttpHeaders.ContentType, "application/json")
+        )
+    }
+}
+
+private suspend fun MockRequestHandleScope.handleRefresh(request: HttpRequestData): HttpResponseData {
+    return try {
+        val body = Json.decodeFromString<RefreshAccessTokenBody>(request.body.toByteArray().decodeToString())
+        if (refreshToken == body.refreshToken) {
+            respond(
+                content = Json.encodeToString(generateSession()),
+                status = HttpStatusCode.OK,
+                headers = headersOf(HttpHeaders.ContentType, "application/json")
+            )
+        } else {
+            respond(
+                content = Json.encodeToString(ServerError("invalid_grant", "Invalid Refresh Token")),
+                status = HttpStatusCode.BadRequest,
+                headers = headersOf(HttpHeaders.ContentType, "application/json")
+            )
+        }
+    } catch (_: Exception) {
+        respond(
+            content = Json.encodeToString(ServerError("invalid_request", "refresh_token required")),
+            status = HttpStatusCode.BadRequest,
+            headers = headersOf(HttpHeaders.ContentType, "application/json")
+        )
+    }
+}
+
 fun generateUser() = UserInfo(
     id = "some-uuid",
     aud = "my-aud",
@@ -124,18 +167,34 @@ fun generateUser() = UserInfo(
 )
 
 fun generateSession() = Session(
-    accessToken = "some-access-token",
+    accessToken = generateAccessToken(),
     expiresIn = 3600,
-    refreshToken = "some-refresh-token",
+    refreshToken = generateRefreshToken(),
     scope = null,
     user = generateUser(),
     tokenType = "bearer"
 )
+
+fun generateAccessToken(): String {
+    accessToken = "access-token-${Random.nextInt()}"
+    return accessToken
+}
+
+fun generateRefreshToken(): String {
+    refreshToken = "refresh-token-${Random.nextInt()}"
+    return refreshToken
+}
 
 fun generateError(): ServerError {
     return ServerError("error", "error description")
 }
 
 fun getUnauthenticatedHeaders() = headersOf("apikey", apiKey)
+
+fun getClient() = GoTrueClient(
+    url = authUrl,
+    headers = getUnauthenticatedHeaders(),
+    httpClient = { getMockClient() }
+)
 
 fun getInvalidHeaders() = headersOf()

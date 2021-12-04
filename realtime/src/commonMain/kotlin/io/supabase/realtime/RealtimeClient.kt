@@ -90,7 +90,12 @@ open class RealtimeClient(
     internal val options: RealtimeClientOptions?
 ) {
 
-    private val headers: Headers = options?.headers?.let { TODO("Merge headers") } ?: DEFAULT_HEADERS
+    private val headers: Headers = Headers.build {
+        // TODO See if appending same headers overwrites or appends current headers
+        appendAll(DEFAULT_HEADERS)
+        options?.headers?.let { appendAll(it) }
+    }
+
     private val params: Map<String, String> = options?.params ?: emptyMap()
 
     private val heartbeatIntervalMs: Long = options?.heartbeatIntervalMs ?: 30000
