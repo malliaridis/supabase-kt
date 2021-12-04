@@ -81,14 +81,14 @@ open class SupabaseClient(
     /**
      * Supabase Auth allows you to create and manage user sessions for access to data that is secured by access policies.
      */
-    private val auth: SupabaseAuthClient = initSupabaseAuthClient()
+    val auth: SupabaseAuthClient = initSupabaseAuthClient()
 
     private val realtime: RealtimeClient = initRealtimeClient()
 
     /**
      * Supabase Storage allows you to manage user-generated content, such as photos or videos.
      */
-    private val storage: StorageClient = initStorageClient()
+    val storage: StorageClient = initStorageClient()
 
     private val postgrest: PostgrestClient = initPostgRESTClient()
 
@@ -155,7 +155,6 @@ open class SupabaseClient(
     private fun initSupabaseAuthClient(): SupabaseAuthClient {
 
         val authHeaders = buildHeaders {
-            append("Authorization", "Bearer $supabaseKey")
             append("apikey", supabaseKey)
             appendAll(this@SupabaseClient.headers)
         }

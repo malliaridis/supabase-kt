@@ -2,22 +2,22 @@ package io.supabase.postgrest.builder
 
 import io.ktor.client.*
 import io.ktor.client.request.*
+import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.supabase.postgrest.http.PostgrestHttpResponse
+import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.decodeFromJsonElement
 
-open class PostgrestBuilder<T : @Serializable Any>(
+open class PostgrestBuilder<T : @Contextual Any>(
     private val url: String,
-    headers: Headers,
+    private var headers: Headers,
     private val schema: String,
     private val httpClient: () -> HttpClient
 ) {
-
-    var headers: Headers
-        get() = headersBuilder.build()
-        set(value) = headersBuilder.appendAll(value)
-
-    private var headersBuilder = HeadersBuilder()
 
     lateinit var method: HttpMethod
         protected set
@@ -38,47 +38,70 @@ open class PostgrestBuilder<T : @Serializable Any>(
         this.body = builder.body
     }
 
-    init {
-        headersBuilder.appendAll(headers)
-    }
-
     protected fun setHeader(name: String, value: String) {
-        this.headersBuilder.append(name, value)
+        headers = Headers.build {
+            appendAll(headers)
+            append(name, value)
+        }
     }
 
     protected fun setSearchParam(name: String, value: String) {
         this.searchParams[name] = value
     }
 
-    suspend fun <R : @Serializable Any> execute(): PostgrestHttpResponse<R> {
+    suspend fun execute(): PostgrestHttpResponse<JsonElement> {
         // https://postgrest.org/en/stable/api.html#switching-schemas
 
         if (method in listOf(HttpMethod.Get, HttpMethod.Head)) {
-            headersBuilder.append("Accept-Profile", schema)
+            setHeader("Accept-Profile", schema)
         } else {
-            headersBuilder.append(HttpHeaders.ContentType, schema)
+            setHeader(HttpHeaders.ContentType, schema)
         }
 
         if (method != HttpMethod.Get && method != HttpMethod.Head) {
-            headersBuilder.append(HttpHeaders.ContentType, ContentType.Application.Json.contentType)
+            setHeader(HttpHeaders.ContentType, ContentType.Application.Json.contentType)
         }
 
         val uriParams = searchParams.toList().formUrlEncode()
 
-        return httpClient().request("$url?$uriParams") {
+        val response = httpClient().request<HttpResponse>("$url?$uriParams") {
             method = this@PostgrestBuilder.method
             headers { appendAll(this@PostgrestBuilder.headers) }
             this@PostgrestBuilder.body?.let { body = it }
         }
+
+        var count: Long? = null
+        if (response.status == HttpStatusCode.OK) {
+            val countHeader = this.headers["Prefer"]?.matches(Regex("count=(exact|planned|estimated)"))
+            val contentRange = response.headers["content-range"]?.split('/')
+            if (countHeader == true && contentRange != null && contentRange.size > 1) {
+                count = contentRange[1].toLongOrNull()
+            }
+        }
+        return PostgrestHttpResponse(
+            status = response.status.value,
+            body = json.decodeFromString(response.readText()),
+            statusText = response.status.description,
+            count = count,
+            error = null
+        )
     }
 
-//    suspend inline fun <reified R : Any> executeAndGetSingle(): R {
-//        val response = execute<R>()
-//        return Json.decodeFromString(response.body!!)
-//    }
-//
-//    suspend inline fun <reified R : Any> executeAndGetList(): List<R> {
-//        val response = execute<R>()
-//        return Json.decodeFromString(response.body!!)
-//    }
+    val json = Json { ignoreUnknownKeys }
+
+    suspend inline fun <reified R : Any> execute(json: Json = this.json): R {
+        val result = execute()
+        return json.decodeFromJsonElement<PostgrestHttpResponse<R>>(result.body!!).body!!
+    }
+
+    suspend inline fun <reified R : Any> executeAndGetSingle(json: Json = this.json): R {
+        val result = execute()
+        val response = json.decodeFromJsonElement<List<R>>(result.body!!)
+        return response[0]
+    }
+
+    suspend inline fun <reified R : Any> executeAndGetList(json: Json = this.json): List<R> {
+        val result = execute()
+        return json.decodeFromJsonElement(result.body!!)
+    }
 }
