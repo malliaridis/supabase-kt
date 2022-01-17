@@ -3,9 +3,6 @@ plugins {
     kotlin("plugin.serialization") version "1.5.31"
 }
 
-group = rootProject.extra["globalGroup"].toString()
-version = rootProject.extra["globalVersion"].toString()
-
 repositories {
     mavenCentral()
 }
@@ -13,7 +10,7 @@ repositories {
 kotlin {
     jvm {
         compilations.all {
-            kotlinOptions.jvmTarget = rootProject.extra["jvmTarget"].toString()
+            kotlinOptions.jvmTarget = Versions.jvmTarget
         }
         testRuns["test"].executionTask.configure {
             useJUnit()
@@ -38,23 +35,39 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-datetime:${rootProject.extra["datetimeVersion"]}")
-                implementation("io.ktor:ktor-client-core:${rootProject.extra["ktorVersion"]}")
-                implementation("io.ktor:ktor-client-serialization:${rootProject.extra["ktorVersion"]}")
+                with(Deps.Kotlinx) {
+                    implementation(dateTime)
+                }
+
+                with(Deps.KtorClient) {
+                    implementation(core)
+                    implementation(serialization)
+                }
             }
         }
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))
-                implementation("io.ktor:ktor-client-mock:${rootProject.extra["ktorVersion"]}")
+
+                with(Deps.Test) {
+                    implementation(ktorMock)
+                }
             }
         }
         val jvmMain by getting {
             dependencies {
-                implementation("io.ktor:ktor-client-cio:${rootProject.extra["ktorVersion"]}")
+                with(Deps.KtorClient) {
+                    implementation(cio)
+                }
             }
         }
-        val jvmTest by getting
+        val jvmTest by getting {
+            dependencies {
+                with(Deps.Test) {
+                    implementation(ktorMock)
+                }
+            }
+        }
         val jsMain by getting
         val jsTest by getting
         val nativeMain by getting

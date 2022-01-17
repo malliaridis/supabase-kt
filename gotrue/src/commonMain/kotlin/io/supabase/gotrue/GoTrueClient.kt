@@ -13,11 +13,11 @@ import io.supabase.gotrue.http.results.EmptyResult
 import io.supabase.gotrue.http.results.SessionResult
 import io.supabase.gotrue.http.results.UserDataResult
 import io.supabase.gotrue.http.results.UserSessionResult
+import io.supabase.gotrue.json.deserialize
 import io.supabase.gotrue.types.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
@@ -407,7 +407,7 @@ open class GoTrueClient(
 
             // TODO Run blocking or make suspendable here and runBlocking at caller
             val json: String = localStorage?.getItem(STORAGE_KEY) ?: return
-            val data = Json.decodeFromString<DataSession>(json)
+            val data = deserialize<DataSession>(json)
 
             val timeNow: Long = timeNow()
 
@@ -428,7 +428,7 @@ open class GoTrueClient(
         if (!isBrowser()) return
 
         val json: String = localStorage?.getItem(STORAGE_KEY) ?: return
-        val data = Json.decodeFromString<DataSession>(json)
+        val data = deserialize<DataSession>(json)
         val timeNow: Long = timeNow()
 
         if (data.expiresAt == null || data.expiresAt < timeNow) {

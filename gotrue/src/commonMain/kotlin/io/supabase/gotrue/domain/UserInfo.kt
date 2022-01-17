@@ -18,7 +18,7 @@ data class UserInfo(
     @SerialName("action_link") val actionLink: String? = null,
     val email: String? = null,
     val phone: String? = null,
-    val identities: List<String>?,
+    val identities: List<JsonElement>?,
     @SerialName("created_at") val createdAt: String,
     @SerialName("confirmed_at") val confirmedAt: String? = null,
     @SerialName("email_confirmed_at") val emailConfirmedAt: String? = null,

@@ -87,7 +87,7 @@ open class PostgrestBuilder<T : @Contextual Any>(
         )
     }
 
-    val json = Json { ignoreUnknownKeys }
+    val json = Json { ignoreUnknownKeys = true }
 
     suspend inline fun <reified R : Any> execute(json: Json = this.json): R {
         val result = execute()

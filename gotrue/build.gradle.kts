@@ -3,11 +3,6 @@ plugins {
     kotlin("plugin.serialization") version "1.5.31"
 }
 
-//group = rootProject.extra["globalGroup"].toString()
-//version = rootProject.extra["globalVersion"].toString()
-group = "io.supabase"
-version = "0.0.1"
-
 repositories {
     mavenCentral()
 }
@@ -15,7 +10,7 @@ repositories {
 kotlin {
     jvm {
         compilations.all {
-            kotlinOptions.jvmTarget = rootProject.extra["jvmTarget"].toString()
+            kotlinOptions.jvmTarget = Versions.jvmTarget
         }
         testRuns["test"].executionTask.configure {
             useJUnit()
@@ -40,20 +35,35 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-datetime:${rootProject.extra["datetimeVersion"]}")
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${rootProject.extra["coroutineVersion"]}")
-                implementation("io.ktor:ktor-client-core:${rootProject.extra["ktorVersion"]}")
-                implementation("io.ktor:ktor-client-serialization:${rootProject.extra["ktorVersion"]}")
-                implementation("io.ktor:ktor-client-auth:${rootProject.extra["ktorVersion"]}")
+
+                with(Deps.Kotlinx) {
+                    implementation(dateTime)
+                    implementation(coroutinesCore)
+                }
+
+                with(Deps.KtorClient) {
+                    implementation(core)
+                    implementation(serialization)
+                    implementation(auth)
+                }
             }
         }
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))
-                implementation("io.ktor:ktor-client-mock:${rootProject.extra["ktorVersion"]}")
+
+                with(Deps.Test) {
+                    implementation(ktorMock)
+                }
             }
         }
-        val jvmMain by getting
+        val jvmMain by getting {
+            dependencies {
+                with(Deps.KtorClient) {
+                    implementation(cio)
+                }
+            }
+        }
         // TODO Add further ktor client implementations for the other platforms
         val jvmTest by getting
         val jsMain by getting

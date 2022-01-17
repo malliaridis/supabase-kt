@@ -1,6 +1,4 @@
 val jvmTarget by rootProject.extra { 11 }
-val globalGroup by rootProject.extra { "io.supabase" }
-val globalVersion by rootProject.extra { "0.0.1" }
 
 val ktorVersion by rootProject.extra { "1.6.5" }
 val datetimeVersion by rootProject.extra { "0.3.1" }
@@ -18,8 +16,8 @@ buildscript {
     }
 }
 
-group = rootProject.extra["globalGroup"].toString()
-version = rootProject.extra["globalVersion"].toString()
+group = "io.supabase"
+version = "0.0.1"
 
 allprojects {
     repositories {

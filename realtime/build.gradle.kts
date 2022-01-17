@@ -3,9 +3,6 @@ plugins {
     kotlin("plugin.serialization") version "1.5.31"
 }
 
-group = "io.supabase"
-version = "0.0.1"
-
 repositories {
     mavenCentral()
 }
@@ -13,7 +10,7 @@ repositories {
 kotlin {
     jvm {
         compilations.all {
-            kotlinOptions.jvmTarget = "11"
+            kotlinOptions.jvmTarget = Versions.jvmTarget
         }
         testRuns["test"].executionTask.configure {
             useJUnit()
@@ -38,11 +35,16 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-datetime:${rootProject.extra["datetimeVersion"]}")
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${rootProject.extra["coroutineVersion"]}")
-                implementation("io.ktor:ktor-client-core:${rootProject.extra["ktorVersion"]}")
-                implementation("io.ktor:ktor-client-serialization:${rootProject.extra["ktorVersion"]}")
-                implementation("io.ktor:ktor-client-websockets:${rootProject.extra["ktorVersion"]}")
+                with(Deps.Kotlinx) {
+                    implementation(dateTime)
+                    implementation(coroutinesCore)
+                }
+
+                with(Deps.KtorClient) {
+                    implementation(core)
+                    implementation(serialization)
+                    implementation(websockets)
+                }
             }
         }
         val commonTest by getting {

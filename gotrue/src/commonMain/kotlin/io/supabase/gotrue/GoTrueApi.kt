@@ -13,6 +13,7 @@ import io.supabase.gotrue.domain.*
 import io.supabase.gotrue.http.bodies.*
 import io.supabase.gotrue.http.errors.ApiError
 import io.supabase.gotrue.http.results.*
+import io.supabase.gotrue.json.json
 import io.supabase.gotrue.types.UserAttributes
 import kotlinx.serialization.json.JsonElement
 
@@ -49,7 +50,7 @@ class GoTrueApi(
             }
             expectSuccess = false
             install(JsonFeature) {
-                serializer = KotlinxSerializer(kotlinx.serialization.json.Json { ignoreUnknownKeys = true })
+                serializer = KotlinxSerializer(json)
             }
             installCustomResponseHandlers()
         }
@@ -105,7 +106,7 @@ class GoTrueApi(
                 }
                 expectSuccess = false
                 install(JsonFeature) {
-                    serializer = KotlinxSerializer(kotlinx.serialization.json.Json { ignoreUnknownKeys = true })
+                    serializer = KotlinxSerializer(json)
                 }
                 installCustomResponseHandlers()
                 installAuth(session)
