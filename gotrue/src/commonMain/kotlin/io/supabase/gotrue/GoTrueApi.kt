@@ -1,20 +1,21 @@
 package io.supabase.gotrue
 
 import io.ktor.client.*
-import io.ktor.client.features.*
-import io.ktor.client.features.auth.*
-import io.ktor.client.features.auth.providers.*
-import io.ktor.client.features.json.*
-import io.ktor.client.features.json.serializer.*
+import io.ktor.client.call.*
+import io.ktor.client.plugins.*
+import io.ktor.client.plugins.auth.*
+import io.ktor.client.plugins.auth.providers.*
+import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
+import io.ktor.serialization.kotlinx.json.*
 import io.supabase.gotrue.domain.*
 import io.supabase.gotrue.http.bodies.*
 import io.supabase.gotrue.http.errors.ApiError
 import io.supabase.gotrue.http.results.*
-import io.supabase.gotrue.json.json
 import io.supabase.gotrue.types.UserAttributes
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 
 /**
@@ -49,9 +50,7 @@ class GoTrueApi(
                 }
             }
             expectSuccess = false
-            install(JsonFeature) {
-                serializer = KotlinxSerializer(json)
-            }
+            install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
             installCustomResponseHandlers()
         }
 
@@ -74,8 +73,8 @@ class GoTrueApi(
             var queryString = ""
             redirectTo?.let { queryString = "?redirect_to=" + it.encodeURLQueryComponent() }
             val result: Session = tokenClient.post("$url/signup$queryString") {
-                body = SignUpEmailBody(email, password, data)
-            }
+                setBody(SignUpEmailBody(email, password, data))
+            }.body()
 
             return UserSessionResult.SessionSuccess(result)
         } catch (error: ApiError) {
@@ -94,8 +93,8 @@ class GoTrueApi(
         return try {
             val session: Session = tokenClient.post("$url/token") {
                 parameter("grant_type", "password")
-                body = SignInEmailBody(email, password)
-            }
+                setBody(SignInEmailBody(email, password))
+            }.body()
 
             authClient = authClient.config {
                 defaultRequest {
@@ -105,9 +104,7 @@ class GoTrueApi(
                     }
                 }
                 expectSuccess = false
-                install(JsonFeature) {
-                    serializer = KotlinxSerializer(json)
-                }
+                install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
                 installCustomResponseHandlers()
                 installAuth(session)
             }
@@ -127,8 +124,8 @@ class GoTrueApi(
     suspend fun signUpWithPhone(phone: String, password: String, data: JsonElement?): UserSessionResult {
         return try {
             val response: Session = tokenClient.post("$url/signup") {
-                body = SignUpPhoneBody(phone, password, data)
-            }
+                setBody(SignUpPhoneBody(phone, password, data))
+            }.body()
 
             UserSessionResult.SessionSuccess(response) // TODO See if UserSuccess instead
         } catch (error: ApiError) {
@@ -145,8 +142,8 @@ class GoTrueApi(
         return try {
             val queryString = "?grant_type=password"
             val response: Session = tokenClient.post("$url/token$queryString") {
-                body = SignInPhoneBody(phone, password)
-            }
+                setBody(SignInPhoneBody(phone, password))
+            }.body()
 
             SessionResult.Success(response)
         } catch (error: ApiError) {
@@ -164,8 +161,8 @@ class GoTrueApi(
             var queryString = ""
             redirectTo?.let { queryString += "?redirect_to=" + it.encodeURLQueryComponent() } // TODO See if encodeUrlParameter is correct
 
-            tokenClient.post<Unit>("$url/magiclink$queryString") {
-                body = MagicLinkEmailBody(email)
+            tokenClient.post("$url/magiclink$queryString") {
+                setBody(MagicLinkEmailBody(email))
             }
 
             EmptyResult.Success()
@@ -180,8 +177,8 @@ class GoTrueApi(
      */
     suspend fun sendMobileOTP(phone: String): MobileOTPResult {
         return try {
-            tokenClient.post<Unit>("$url/otp") {
-                body = MobileOTPBody(phone)
+            tokenClient.post("$url/otp") {
+                setBody(MobileOTPBody(phone))
             }
             EmptyResult.Success()
         } catch (error: ApiError) {
@@ -198,8 +195,8 @@ class GoTrueApi(
     suspend fun verifyMobileOTP(phone: String, token: String, redirectTo: String?): UserSessionResult {
         return try {
             val response: Session = tokenClient.post("$url/verify") {
-                body = VerifyMobileOTPBody(phone, token, "sms", redirectTo)
-            }
+                setBody(VerifyMobileOTPBody(phone, token, "sms", redirectTo))
+            }.body()
 
             return UserSessionResult.SessionSuccess(response) // TODO See if UserSuccess instead
         } catch (error: ApiError) {
@@ -219,8 +216,8 @@ class GoTrueApi(
             redirectTo?.let { queryString += "?redirect_to=" + redirectTo.encodeURLQueryComponent() }
 
             val response: UserInfo = tokenClient.post("$url/invite$queryString") {
-                body = EmailInviteBody(email, data)
-            }
+                setBody(EmailInviteBody(email, data))
+            }.body()
 
             UserResult.Success(response)
         } catch (error: ApiError) {
@@ -238,8 +235,8 @@ class GoTrueApi(
             var queryString = ""
             redirectTo?.let { queryString += "?redirect_to=" + redirectTo.encodeURLQueryComponent() }
 
-            tokenClient.post<Unit>("$url/recover$queryString") {
-                body = { email }
+            tokenClient.post("$url/recover$queryString") {
+                setBody { email }
             }
             EmptyResult.Success()
         } catch (error: ApiError) {
@@ -252,7 +249,7 @@ class GoTrueApi(
      */
     suspend fun signOut(): EmptyResult {
         return try {
-            authClient.post<Unit>("$url/logout")
+            authClient.post("$url/logout")
             authClient = tokenClient
 
             EmptyResult.Success()
@@ -281,7 +278,7 @@ class GoTrueApi(
      */
     suspend fun getUser(): UserDataResult {
         return try {
-            val response: UserInfo = authClient.get("$url/user")
+            val response: UserInfo = authClient.get("$url/user").body()
             UserDataResult.Success(response, response)
         } catch (error: ApiError) {
             UserDataResult.Failure(error)
@@ -295,8 +292,8 @@ class GoTrueApi(
     suspend fun updateUser(attributes: UserAttributes): UserDataResult {
         return try {
             val response: UserInfo = authClient.put("$url/user") {
-                body = attributes
-            }
+                setBody(attributes)
+            }.body()
 
             UserDataResult.Success(response, response)
         } catch (error: ApiError) {
@@ -313,7 +310,7 @@ class GoTrueApi(
      */
     suspend fun deleteUser(uid: String): UserDataResult {
         return try {
-            val response: UserInfo = authClient.delete("$url/admin/users/$uid")
+            val response: UserInfo = authClient.delete("$url/admin/users/$uid").body()
             UserDataResult.Success(response, response)
         } catch (error: ApiError) {
             UserDataResult.Failure(error)
@@ -327,8 +324,8 @@ class GoTrueApi(
     suspend fun refreshAccessToken(refreshToken: String): SessionResult {
         return try {
             val response: Session = tokenClient.post("$url/token?grant_type=refresh_token") {
-                body = RefreshAccessTokenBody(refreshToken)
-            }
+                setBody(RefreshAccessTokenBody(refreshToken))
+            }.body()
 
             SessionResult.Success(response)
         } catch (error: ApiError) {
@@ -353,17 +350,15 @@ class GoTrueApi(
     ): UserSessionResult {
         return try {
             val response: Session = tokenClient.post("$url/admin/generate_link") {
-                body = MagicLinkGenerationBody(type, email, password, data, redirectTo)
-            }
+                setBody(MagicLinkGenerationBody(type, email, password, data, redirectTo))
+            }.body()
             UserSessionResult.SessionSuccess(response)
         } catch (error: ApiError) {
             UserSessionResult.Failure(error)
         }
     }
 
-    suspend fun getSettings(): Settings {
-        return tokenClient.get("$url/settings")
-    }
+    suspend fun getSettings(): Settings = tokenClient.get("$url/settings").body()
 
     fun auth(): HttpClient = authClient
 
@@ -410,7 +405,7 @@ class GoTrueApi(
         HttpResponseValidator {
             validateResponse { response ->
                 if (!response.status.isSuccess())
-                    throw ApiError(response.readText(), response.status.value)
+                    throw ApiError(response.bodyAsText(), response.status.value)
             }
         }
     }
@@ -430,11 +425,10 @@ class GoTrueApi(
                     )
                 }
 
-                refreshTokens { unauthorizedResponse: HttpResponse ->
-                    // TODO See if tokenClient needs to be authClient instead
+                refreshTokens {
                     refreshTokenInfo = tokenClient.post("$url/token") {
-                        body = RefreshAccessTokenBody(session.refreshToken!!)
-                    }
+                        setBody(RefreshAccessTokenBody(this@refreshTokens.oldTokens!!.refreshToken))
+                    }.body()
                     BearerTokens(
                         accessToken = refreshTokenInfo.accessToken,
                         refreshToken = session.refreshToken!! // TODO See if the new refresh token is from refreshTokenInfo

@@ -1,12 +1,12 @@
 package io.supabase.realtime
 
 import io.ktor.client.*
-import io.ktor.client.features.*
-import io.ktor.client.features.websocket.*
+import io.ktor.client.plugins.*
+import io.ktor.client.plugins.websocket.*
 import io.ktor.client.request.*
 import io.ktor.http.*
-import io.ktor.http.cio.websocket.*
 import io.ktor.util.collections.*
+import io.ktor.websocket.*
 import io.supabase.realtime.helper.*
 import kotlinx.coroutines.*
 import kotlinx.serialization.*
@@ -122,7 +122,7 @@ open class RealtimeClient(
     private var conn: WebSocketSession? = null
     private var socketState: SocketState = SocketState.closed
 
-    private var sendBuffer: ConcurrentList<suspend () -> Unit?> = ConcurrentList()
+    private var sendBuffer: MutableSet<suspend () -> Unit?> = ConcurrentSet()
 
     private val stateChangeCallbacks = StateChangeCallbacks()
 

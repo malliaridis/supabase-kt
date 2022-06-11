@@ -1,6 +1,7 @@
 package io.supabase.storage
 
 import io.ktor.client.*
+import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import io.supabase.storage.types.Bucket
@@ -12,6 +13,7 @@ data class BucketCreateOptions(
     val public: Boolean
 )
 
+// TODO Wrap calls with try and error
 open class StorageBucketApi(
     private val url: String,
     private val headers: Headers,
@@ -26,7 +28,7 @@ open class StorageBucketApi(
             headers {
                 appendAll(this@StorageBucketApi.headers)
             }
-        }
+        }.body()
     }
 
     /**
@@ -39,7 +41,7 @@ open class StorageBucketApi(
             headers {
                 appendAll(this@StorageBucketApi.headers)
             }
-        }
+        }.body()
     }
 
     /**
@@ -54,8 +56,8 @@ open class StorageBucketApi(
             headers {
                 appendAll(this@StorageBucketApi.headers)
             }
-            body = BucketCreateOptions(id, public)
-        }
+            setBody(BucketCreateOptions(id, public))
+        }.body()
     }
 
     /**
@@ -69,8 +71,8 @@ open class StorageBucketApi(
             headers {
                 appendAll(this@StorageBucketApi.headers)
             }
-            body = BucketCreateOptions(id, public)
-        }
+            setBody(BucketCreateOptions(id, public))
+        }.body()
     }
 
     /**
@@ -83,7 +85,7 @@ open class StorageBucketApi(
             headers {
                 appendAll(this@StorageBucketApi.headers)
             }
-        }
+        }.body()
     }
 
     /**
@@ -97,6 +99,6 @@ open class StorageBucketApi(
             headers {
                 appendAll(this@StorageBucketApi.headers)
             }
-        }
+        }.body()
     }
 }

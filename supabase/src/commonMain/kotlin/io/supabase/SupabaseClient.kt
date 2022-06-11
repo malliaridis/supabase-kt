@@ -3,7 +3,7 @@ package io.supabase
 import io.ktor.client.*
 import io.ktor.client.utils.*
 import io.ktor.http.*
-import io.ktor.http.cio.websocket.*
+import io.ktor.websocket.*
 import io.supabase.builder.SupabaseQueryBuilder
 import io.supabase.gotrue.GoTrueClient
 import io.supabase.gotrue.types.SupportedStorage
@@ -92,6 +92,13 @@ open class SupabaseClient(
 
     private val postgrest: PostgrestClient = initPostgRESTClient()
 
+    init {
+        if (supabaseUrl.isBlank()) throw IllegalArgumentException("supabaseUrl should not be empty.")
+        if (supabaseKey.isBlank()) throw IllegalArgumentException("supabaseKey should not be empty.")
+        // TODO Add URL validation
+        // TODO Check if supabase URL ends with slash (URLs are concatenated with slash and would cause double slash)
+    }
+
     /**
      * Perform a table operation.
      *
@@ -115,7 +122,7 @@ open class SupabaseClient(
      * @param params  The parameters to pass to the function call.
      * @param head   When set to true, no data will be returned.
      * @param count  Count algorithm to use to count rows in a table.
-     *
+     * TODO Change params to Serializable and parse to key-value
      */
     fun <T : @Serializable Any> rpc(
         fn: String,

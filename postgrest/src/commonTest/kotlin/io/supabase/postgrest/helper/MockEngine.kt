@@ -2,9 +2,9 @@ package io.supabase.postgrest.helper
 
 import io.ktor.client.*
 import io.ktor.client.engine.mock.*
-import io.ktor.client.features.json.*
-import io.ktor.client.features.json.serializer.*
+import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.http.*
+import io.ktor.serialization.kotlinx.json.*
 import io.supabase.postgrest.PostgrestClient
 import io.supabase.postgrest.domain.ServerError
 import io.supabase.postgrest.domain.Todo
@@ -18,8 +18,10 @@ const val restUrl = "http://localhost:9999/rest/v1"
 fun getMockClient(): HttpClient {
     return HttpClient(MockEngine) {
         expectSuccess = false
-        install(JsonFeature) {
-            serializer = KotlinxSerializer(kotlinx.serialization.json.Json { ignoreUnknownKeys = true })
+        install(ContentNegotiation) {
+            json(Json {
+                ignoreUnknownKeys = true
+            })
         }
         engine {
             addHandler { request ->

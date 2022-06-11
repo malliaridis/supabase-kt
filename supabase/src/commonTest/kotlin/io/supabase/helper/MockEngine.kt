@@ -2,10 +2,10 @@ package io.supabase.helper
 
 import io.ktor.client.*
 import io.ktor.client.engine.mock.*
-import io.ktor.client.features.json.*
-import io.ktor.client.features.json.serializer.*
+import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
 import io.ktor.http.*
+import io.ktor.serialization.kotlinx.json.*
 import io.supabase.SupabaseClient
 import io.supabase.gotrue.domain.AppMetadata
 import io.supabase.gotrue.domain.Session
@@ -53,9 +53,7 @@ const val authUrl = "$supabaseUrl/auth/v1"
 
 fun getMockClient(): HttpClient {
     return HttpClient(MockEngine) {
-        install(JsonFeature) {
-            serializer = KotlinxSerializer()
-        }
+        install(ContentNegotiation) { json() }
         engine {
             addHandler { request ->
                 assertTrue(request.headers.contains("apikey"), "API key not included")

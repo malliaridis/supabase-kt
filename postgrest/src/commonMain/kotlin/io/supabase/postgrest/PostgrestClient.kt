@@ -51,6 +51,7 @@ open class PostgrestClient(
      *
      * @param[fn] The function name to call.
      * @param[params] The parameters to pass to the function call.
+     * TODO Change params to Serializable and parse to key-value
      */
     fun <T : @Serializable Any> rpc(fn: String, params: Any?, head: Boolean?, count: Count?): PostgrestBuilder<T> {
         return PostgrestRpcBuilder<T>("$url/rpc/$fn", headers, schema, httpClient).rpc(params, head, count)

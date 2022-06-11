@@ -1,8 +1,6 @@
 package io.supabase.realtime.helper
 
-import kotlinx.atomicfu.atomic
-import kotlinx.atomicfu.getAndUpdate
+// TODO Add atomic<Int>(0) again once atomicfu dependency stdlib bug fixed
+private var current = 0
 
-private val current = atomic<Int>(0)
-
-actual fun makeRef(): String = current.getAndUpdate { it + 1 }.toString()
+actual fun makeRef(): String = current++.toString()

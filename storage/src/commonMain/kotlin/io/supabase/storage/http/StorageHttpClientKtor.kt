@@ -1,6 +1,7 @@
 package io.supabase.storage.http
 
 import io.ktor.client.*
+import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 
@@ -22,7 +23,7 @@ class StorageHttpClientKtor(
         return httpClient().get(url + path) {
             // TODO Handle options too
             // options
-        }
+        }.body()
     }
 
     override suspend fun post(
@@ -33,8 +34,8 @@ class StorageHttpClientKtor(
         return httpClient().post(url + path) {
             // TODO Handle options too
             // options
-            if (body != null) this.body = body
-        }
+            if (body != null) setBody(body)
+        }.body()
     }
 
     override suspend fun put(
@@ -45,8 +46,8 @@ class StorageHttpClientKtor(
         return httpClient().put(url + path) {
             // TODO Handle options too
             // options
-            this.body = body
-        }
+            setBody(body)
+        }.body()
     }
 
     override suspend fun remove(
@@ -56,6 +57,6 @@ class StorageHttpClientKtor(
         return httpClient().delete(url + path) {
             // TODO Handle options too
             // options
-        }
+        }.body()
     }
 }

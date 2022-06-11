@@ -454,7 +454,7 @@ open class GoTrueClient(
 
     private suspend fun callRefreshToken(refreshToken: String? = currentSession?.refreshToken): SessionResult {
         return refreshToken?.let {
-            val result = api.refreshAccessToken(refreshToken!!)
+            val result = api.refreshAccessToken(refreshToken)
             if (result is SessionResult.Success) {
                 saveSession(result.data)
                 notifyAllSubscribers(AuthChangeEvent.SIGNED_IN)

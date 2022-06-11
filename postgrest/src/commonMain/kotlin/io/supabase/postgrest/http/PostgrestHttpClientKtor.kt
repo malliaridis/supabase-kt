@@ -1,6 +1,7 @@
 package io.supabase.postgrest.http
 
 import io.ktor.client.*
+import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import kotlinx.serialization.Serializable
@@ -24,8 +25,8 @@ class PostgrestHttpClientKtor(
     ): PostgrestHttpResponse<R> {
         return httpClient().request(uri) {
             this.method = method
-            this.body = Json.encodeToString(body)
-            this.headers { appendAll(headers) }
-        }
+            setBody(Json.encodeToString(body))
+            headers { appendAll(headers) }
+        }.body()
     }
 }

@@ -96,18 +96,18 @@ class StorageFileApi(
         val finalPath = getFinalPath(path)
 
         if (method == HttpMethod.Post) {
-            httpClient().post<String>("$url/object/$finalPath") {
+            httpClient().post("$url/object/$finalPath") {
                 headers {
                     appendAll(this@StorageFileApi.headers)
                 }
-                body = requestBody
+                setBody(requestBody)
             }
         } else {
-            httpClient().put<String>("$url/object/$finalPath") {
+            httpClient().put("$url/object/$finalPath") {
                 headers {
                     appendAll(this@StorageFileApi.headers)
                 }
-                body = requestBody
+                setBody(requestBody)
             }
         }
 
@@ -164,12 +164,12 @@ class StorageFileApi(
             headers {
                 appendAll(this@StorageFileApi.headers)
             }
-            body = formData {
+            setBody(formData {
                 append("bucketId", bucketId)
                 append("sourceKey", fromPath)
                 append("destinationKey", toPath)
-            }
-        }
+            })
+        }.body()
     }
 
     /**
@@ -183,12 +183,12 @@ class StorageFileApi(
         expiresIn: Long
     ): String {
         val finalPath = this.getFinalPath(path)
-        val data = httpClient().post<String>("$url/object/sign/$finalPath") {
+        val data: String = httpClient().post("$url/object/sign/$finalPath") {
             headers {
                 appendAll(this@StorageFileApi.headers)
             }
-            body = SignedUrlBody(expiresIn)
-        }
+            setBody(SignedUrlBody(expiresIn))
+        }.body()
         return "$url$data" // Signed URL
     }
 
@@ -204,7 +204,7 @@ class StorageFileApi(
                 appendAll(this@StorageFileApi.headers)
             }
         }
-        return response.receive()
+        return response.body()
     }
 
     /**
@@ -227,8 +227,8 @@ class StorageFileApi(
                 headers {
                     appendAll(this@StorageFileApi.headers)
                 }
-                body = FileObjectRemoveBody(paths)
-            }
+                setBody(FileObjectRemoveBody(paths))
+            }.body()
             FileObjectResult.Success(response)
         } catch (e: Exception) {
             FileObjectResult.Failure(e.message ?: e.toString())
@@ -275,8 +275,8 @@ class StorageFileApi(
                 headers {
                     appendAll(this@StorageFileApi.headers)
                 }
-                body = options
-            }
+                setBody(options)
+            }.body()
             FileObjectResult.Success(objects)
         } catch (error: Exception) {
             FileObjectResult.Failure(error.message ?: error.toString())

@@ -13,6 +13,8 @@ class PostgrestRpcBuilder<T : @Serializable Any>(
 
     /**
      * Perform a function call.
+     * TODO Document parameters
+     * TODO Change params to Serializable and parse to key-value
      */
     fun rpc(
         params: Any?,
@@ -23,6 +25,7 @@ class PostgrestRpcBuilder<T : @Serializable Any>(
             method = HttpMethod.Head
 
             if (params != null && params is Map<*, *>) {
+                // TODO Change Map<String, String> to Map<String, Serializable>
                 (params as? Map<String, String>)?.forEach { (key, value) ->
                     setSearchParam(key, value)
                 }
@@ -41,6 +44,7 @@ class PostgrestRpcBuilder<T : @Serializable Any>(
 
     /**
      * TODO See if this function is necessary.
+     * // TODO Change params to Serializable
      */
     internal fun rpc(params: Any?): PostgrestBuilder<T> {
         method = HttpMethod.Post

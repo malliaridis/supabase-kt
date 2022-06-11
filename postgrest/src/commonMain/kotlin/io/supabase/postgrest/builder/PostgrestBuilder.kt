@@ -25,6 +25,7 @@ open class PostgrestBuilder<T : @Contextual Any>(
     var body: @Serializable Any? = null
         protected set
 
+    // TODO Make searchParams String: Serializable
     var searchParams: MutableMap<String, String> = mutableMapOf()
         private set
 
@@ -64,10 +65,10 @@ open class PostgrestBuilder<T : @Contextual Any>(
 
         val uriParams = searchParams.toList().formUrlEncode()
 
-        val response = httpClient().request<HttpResponse>("$url?$uriParams") {
+        val response = httpClient().request("$url?$uriParams") {
             method = this@PostgrestBuilder.method
             headers { appendAll(this@PostgrestBuilder.headers) }
-            this@PostgrestBuilder.body?.let { body = it }
+            this@PostgrestBuilder.body?.let { setBody(it) }
         }
 
         var count: Long? = null
@@ -80,7 +81,7 @@ open class PostgrestBuilder<T : @Contextual Any>(
         }
         return PostgrestHttpResponse(
             status = response.status.value,
-            body = json.decodeFromString(response.readText()),
+            body = json.decodeFromString(response.bodyAsText()),
             statusText = response.status.description,
             count = count,
             error = null
