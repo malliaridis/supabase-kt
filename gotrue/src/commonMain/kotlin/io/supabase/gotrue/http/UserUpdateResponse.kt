@@ -1,10 +1,10 @@
 package io.supabase.gotrue.http
 
-import io.supabase.gotrue.domain.UserInfo
+import io.supabase.gotrue.domain.User
 import io.supabase.gotrue.http.errors.ApiError
 
 data class UserUpdateResponse(
-    val data: UserInfo? = null,
-    val user: UserInfo? = null,
+    val data: User? = null,
+    val user: User? = null,
     val error: ApiError? = null
 )

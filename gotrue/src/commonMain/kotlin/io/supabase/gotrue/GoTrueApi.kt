@@ -14,9 +14,9 @@ import io.supabase.gotrue.domain.*
 import io.supabase.gotrue.http.bodies.*
 import io.supabase.gotrue.http.errors.ApiError
 import io.supabase.gotrue.http.results.*
-import io.supabase.gotrue.types.UserAttributes
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
 
 /**
  *
@@ -26,6 +26,7 @@ import kotlinx.serialization.json.JsonElement
 class GoTrueApi(
     private val url: String,
     private val headers: Headers,
+    private val cookieOptions: CookieOptions = DEFAULT_COOKIES,
     onAccessToken: ((tokenInfo: Session) -> Unit)? = null,
     onRefreshToken: ((tokenInfo: Session) -> Unit)? = null,
     httpClient: () -> HttpClient
@@ -58,28 +59,65 @@ class GoTrueApi(
     }
 
     /**
-     * Register a new user with an email and password.
+     * Create a temporary object with all configured headers and adds the Authorization token to be used on request
+     * methods.
+     * @param jwt A valid, logged-in JWT.
+     */
+    private fun createRequestHeaders(jwt: String): Headers = HeadersBuilder().apply {
+        appendAll(headers)
+        append("Authorization", "Bearer $jwt")
+    }.build()
+
+    private fun cookieName(): String = cookieOptions.name ?: ""
+
+    /**
+     * Generates the relevant login URL for a third-party provider.
+     * @param provider One of the providers supported by GoTrue.
+     * @param redirectTo A URL or mobile address to send the user to after they are confirmed.
+     * @param scopes A space-separated list of scopes granted to the OAuth application.
+     */
+    fun getUrlForProvider(
+        provider: Provider,
+        redirectTo: String?,
+        scopes: String?,
+        queryParams: Map<String, String>?
+    ): Url = URLBuilder("$url/authorize")
+        .apply {
+            parameters.append("provider", provider.toString().encodeURLQueryComponent())
+            redirectTo?.let { parameters.append("redirect_to", redirectTo.encodeURLQueryComponent()) }
+            scopes?.let { parameters.append("scopes", scopes.encodeURLQueryComponent()) }
+
+            queryParams?.forEach { _ -> parameters::append }
+        }
+        .build()
+
+    /**
+     * Creates a new user using their email address.
+     * @param email The email address of the user.
+     * @param password The password of the user.
+     * @param redirectTo A URL or mobile address to send the user to after they are confirmed.
+     * @param data Optional user metadata.
      *
-     * @param email The email to register
-     * @param password The password to set for the new account. If not set it needs to be provided on [verify]
+     * @returns A logged-in session if the server has `autoconfirm` ON
+     * @returns A user if the server has `autoconfirm` OFF
      */
     suspend fun signUpWithEmail(
         email: String,
         password: String,
         redirectTo: String?,
-        data: JsonElement?
-    ): UserSessionResult {
-        return try {
-            var queryString = ""
-            redirectTo?.let { queryString = "?redirect_to=" + it.encodeURLQueryComponent() }
-            val result: Session = tokenClient.post("$url/signup$queryString") {
-                setBody(SignUpEmailBody(email, password, data))
-            }.body()
+        data: JsonObject?,
+        captchaToken: String?
+    ): UserSessionResult = try {
+        val session: Session = tokenClient.post("$url/signup") {
+            redirectTo?.let { parameter("redirect_to", it.encodeURLQueryComponent()) }
+            setBody(SignUpEmailBody(email, password, data, captchaToken))
+        }.body()
 
-            return UserSessionResult.SessionSuccess(result)
-        } catch (error: ApiError) {
-            UserSessionResult.Failure(error)
-        }
+        configureAuthClient(session)
+
+        UserSessionResult.SessionSuccess(session)
+    } catch (error: ApiError) {
+        UserSessionResult.Failure(error)
     }
 
     /**
@@ -89,30 +127,19 @@ class GoTrueApi(
      * @param password The password of the user.
      * @param redirectTo A URL or mobile address to send the user to after they are confirmed.
      */
-    suspend fun signInWithEmail(email: String, password: String, redirectTo: String? = null): SessionResult {
-        return try {
-            val session: Session = tokenClient.post("$url/token") {
-                parameter("grant_type", "password")
-                setBody(SignInEmailBody(email, password))
-            }.body()
+    suspend fun signInWithEmail(email: String, password: String, redirectTo: String? = null): SessionResult = try {
 
-            authClient = authClient.config {
-                defaultRequest {
-                    headers {
-                        appendAll(this@GoTrueApi.headers)
-                        append(HttpHeaders.ContentType, "application/json")
-                    }
-                }
-                expectSuccess = false
-                install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
-                installCustomResponseHandlers()
-                installAuth(session)
-            }
+        val session: Session = tokenClient.post("$url/token") {
+            parameter("grant_type", "password")
+            redirectTo?.let { parameter("redirect_to", redirectTo.encodeURLQueryComponent()) }
+            setBody(SignInEmailBody(email, password))
+        }.body()
 
-            SessionResult.Success(session)
-        } catch (error: ApiError) {
-            SessionResult.Failure(error)
-        }
+        configureAuthClient(session)
+
+        SessionResult.Success(session)
+    } catch (error: ApiError) {
+        SessionResult.Failure(error)
     }
 
     /**
@@ -121,16 +148,22 @@ class GoTrueApi(
      * @param password The password of the user.
      * @param data Optional user metadata.
      */
-    suspend fun signUpWithPhone(phone: String, password: String, data: JsonElement?): UserSessionResult {
-        return try {
-            val response: Session = tokenClient.post("$url/signup") {
-                setBody(SignUpPhoneBody(phone, password, data))
-            }.body()
+    suspend fun signUpWithPhone(
+        phone: String,
+        password: String,
+        data: JsonObject?,
+        captchaToken: String?
+    ): UserSessionResult = try {
 
-            UserSessionResult.SessionSuccess(response) // TODO See if UserSuccess instead
-        } catch (error: ApiError) {
-            UserSessionResult.Failure(error)
-        }
+        val session: Session = tokenClient.post("$url/signup") {
+            setBody(SignUpPhoneBody(phone, password, data, captchaToken))
+        }.body()
+
+        configureAuthClient(session)
+
+        UserSessionResult.SessionSuccess(session) // TODO See if UserSuccess instead
+    } catch (error: ApiError) {
+        UserSessionResult.Failure(error)
     }
 
     /**
@@ -138,32 +171,113 @@ class GoTrueApi(
      * @param phone The phone number of the user.
      * @param password The password of the user.
      */
-    suspend fun signInWithPhone(phone: String, password: String): SessionResult {
-        return try {
-            val queryString = "?grant_type=password"
-            val response: Session = tokenClient.post("$url/token$queryString") {
-                setBody(SignInPhoneBody(phone, password))
-            }.body()
+    suspend fun signInWithPhone(phone: String, password: String): SessionResult = try {
+        val session: Session = tokenClient.post("$url/token") {
+            parameter("grant_type", "password")
+            setBody(SignInPhoneBody(phone, password))
+        }.body()
 
-            SessionResult.Success(response)
-        } catch (error: ApiError) {
-            SessionResult.Failure(error)
+        configureAuthClient(session)
+
+        SessionResult.Success(session)
+    } catch (error: ApiError) {
+        SessionResult.Failure(error)
+    }
+
+    /**
+     * Logs in an OpenID Connect user using their [OpenIDConnectCredentials.idToken].
+     * @param credentials The OpenID Connect credentials
+     */
+    suspend fun signInWithOpenIDConnect(credentials: OpenIDConnectCredentials): SessionResult = try {
+        val session: Session = tokenClient.post("$url/token") {
+            parameter("grant_type", "id_token")
+            setBody(credentials)
+        }.body()
+
+        configureAuthClient(session)
+
+        SessionResult.Success(session)
+    } catch (error: ApiError) {
+        SessionResult.Failure(error)
+    }
+
+    /**
+     *  Configures the authenticated client with the provided session. Used after sign up or sign in.
+     *  @param session The sessions to use.
+     */
+    private fun configureAuthClient(session: Session) {
+        authClient = authClient.config {
+            defaultRequest {
+                headers {
+                    appendAll(this@GoTrueApi.headers)
+                    append(HttpHeaders.ContentType, "application/json")
+                }
+            }
+            expectSuccess = false
+            install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
+            installCustomResponseHandlers()
+            installAuth(session)
         }
     }
 
     /**
      * Sends a magic login link to an email address.
+     *
      * @param email The email address of the user.
+     * @param shouldCreateUser A boolean flag to indicate whether to automatically create a user on magiclink / otp
+     * sign-ins if the user doesn't exist. Defaults to true.
      * @param redirectTo A URL or mobile address to send the user to after they are confirmed.
      */
-    suspend fun sendMagicLinkEmail(email: String, redirectTo: String?): MagicLinkResult {
-        return try {
-            var queryString = ""
-            redirectTo?.let { queryString += "?redirect_to=" + it.encodeURLQueryComponent() } // TODO See if encodeUrlParameter is correct
+    suspend fun sendMagicLinkEmail(
+        email: String,
+        shouldCreateUser: Boolean = true,
+        redirectTo: String?,
+        captchaToken: String?
+    ): MagicLinkResult = try {
+        tokenClient.post("$url/magiclink") {
+            redirectTo?.let { parameter("redirect_to", it.encodeURLQueryComponent()) }
+            setBody(MagicLinkEmailBody(email, shouldCreateUser, captchaToken))
+        }
 
-            tokenClient.post("$url/magiclink$queryString") {
-                setBody(MagicLinkEmailBody(email))
-            }
+        // TODO Validate response before returning empty response
+        EmptyResult.Success()
+    } catch (error: ApiError) {
+        EmptyResult.Failure(error)
+    }
+
+    /**
+     * Sends a mobile OTP via SMS. Will register the account if it doesn't already exist.
+     *
+     * @param phone The user's phone number WITH international prefix.
+     * @param shouldCreateUser A boolean flag to indicate whether to automatically create a user on magiclink / otp
+     * sign-ins if the user doesn't exist. Defaults to true.
+     */
+    suspend fun sendMobileOTP(
+        phone: String,
+        shouldCreateUser: Boolean = true,
+        captchaToken: String?
+    ): MobileOTPResult = try {
+        tokenClient.post("$url/otp") {
+            setBody(MobileOTPBody(phone, shouldCreateUser, captchaToken))
+        }
+        EmptyResult.Success()
+    } catch (error: ApiError) {
+        EmptyResult.Failure(error)
+    }
+
+    /**
+     * Removes a logged-in session.
+     * @param jwt A valid, logged-in JWT. If not provided, [authClient] is used for signing out.
+     */
+    suspend fun signOut(jwt: String? = null): EmptyResult {
+        return try {
+            jwt?.let {
+                tokenClient.post("$url/logout") {
+                    header("Authorization", "Bearer $it")
+                }
+            } ?: run { authClient.post("$url/logout") }
+
+            authClient = tokenClient
 
             EmptyResult.Success()
         } catch (error: ApiError) {
@@ -171,38 +285,38 @@ class GoTrueApi(
         }
     }
 
-    /**
-     * Sends a mobile OTP via SMS. Will register the account if it doesn't already exist
-     * @param phone The user's phone number WITH international prefix
-     */
-    suspend fun sendMobileOTP(phone: String): MobileOTPResult {
-        return try {
-            tokenClient.post("$url/otp") {
-                setBody(MobileOTPBody(phone))
-            }
-            EmptyResult.Success()
-        } catch (error: ApiError) {
-            EmptyResult.Failure(error)
+    // TODO Implement verifyOTP
+    /*
+        /**
+       * Send User supplied Email / Mobile OTP to be verified
+       * @param email The user's email address
+       * @param phone The user's phone number WITH international prefix
+       * @param token token that user was sent to their mobile phone
+       * @param type verification type that the otp is generated for
+       * @param redirectTo A URL or mobile address to send the user to after they are confirmed.
+       */
+      async verifyOTP(
+        { email, phone, token, type = 'sms' }: VerifyOTPParams,
+        options: {
+          redirectTo?: string
+        } = {}
+      ): Promise<{ data: Session | User | null; error: ApiError | null }> {
+        try {
+          const headers = { ...this.headers }
+          const data = await post(
+            this.fetch,
+            `${this.url}/verify`,
+            { email, phone, token, type, redirect_to: options.redirectTo },
+            { headers }
+          )
+          const session = { ...data }
+          if (session.expires_in) session.expires_at = expiresAt(data.expires_in)
+          return { data: session, error: null }
+        } catch (e) {
+          return { data: null, error: e as ApiError }
         }
-    }
-
-    /**
-     * Send User supplied Mobile OTP to be verified
-     * @param phone The user's phone number WITH international prefix
-     * @param token token that user was sent to their mobile phone
-     * @param redirectTo A URL or mobile address to send the user to after they are confirmed.
+      }
      */
-    suspend fun verifyMobileOTP(phone: String, token: String, redirectTo: String?): UserSessionResult {
-        return try {
-            val response: Session = tokenClient.post("$url/verify") {
-                setBody(VerifyMobileOTPBody(phone, token, "sms", redirectTo))
-            }.body()
-
-            return UserSessionResult.SessionSuccess(response) // TODO See if UserSuccess instead
-        } catch (error: ApiError) {
-            UserSessionResult.Failure(error)
-        }
-    }
 
     /**
      * Sends an invite link to an email address.
@@ -215,7 +329,7 @@ class GoTrueApi(
             var queryString = ""
             redirectTo?.let { queryString += "?redirect_to=" + redirectTo.encodeURLQueryComponent() }
 
-            val response: UserInfo = tokenClient.post("$url/invite$queryString") {
+            val response: User = tokenClient.post("$url/invite$queryString") {
                 setBody(EmailInviteBody(email, data))
             }.body()
 
@@ -245,40 +359,11 @@ class GoTrueApi(
     }
 
     /**
-     * Removes a logged-in session.
-     */
-    suspend fun signOut(): EmptyResult {
-        return try {
-            authClient.post("$url/logout")
-            authClient = tokenClient
-
-            EmptyResult.Success()
-        } catch (error: ApiError) {
-            EmptyResult.Failure(error)
-        }
-    }
-
-    /**
-     * Generates the relevant login URL for a third-party provider.
-     * @param provider One of the providers supported by GoTrue.
-     * @param redirectTo A URL or mobile address to send the user to after they are confirmed.
-     * @param scopes A space-separated list of scopes granted to the OAuth application.
-     */
-    fun getUrlForProvider(provider: Provider, redirectTo: String?, scopes: String?): String {
-        val urlParams: MutableList<String> = mutableListOf("provider=${provider.toString().encodeURLQueryComponent()}")
-
-        redirectTo?.let { urlParams.add("redirect_to=${redirectTo.encodeURLQueryComponent()}") }
-        scopes?.let { urlParams.add("scopes=${scopes.encodeURLQueryComponent()}") }
-
-        return "$url/authorize?${urlParams.joinToString("&")}"
-    }
-
-    /**
      * Gets the user details.
      */
     suspend fun getUser(): UserDataResult {
         return try {
-            val response: UserInfo = authClient.get("$url/user").body()
+            val response: User = authClient.get("$url/user").body()
             UserDataResult.Success(response, response)
         } catch (error: ApiError) {
             UserDataResult.Failure(error)
@@ -291,7 +376,7 @@ class GoTrueApi(
      */
     suspend fun updateUser(attributes: UserAttributes): UserDataResult {
         return try {
-            val response: UserInfo = authClient.put("$url/user") {
+            val response: User = authClient.put("$url/user") {
                 setBody(attributes)
             }.body()
 
@@ -310,7 +395,7 @@ class GoTrueApi(
      */
     suspend fun deleteUser(uid: String): UserDataResult {
         return try {
-            val response: UserInfo = authClient.delete("$url/admin/users/$uid").body()
+            val response: User = authClient.delete("$url/admin/users/$uid").body()
             UserDataResult.Success(response, response)
         } catch (error: ApiError) {
             UserDataResult.Failure(error)

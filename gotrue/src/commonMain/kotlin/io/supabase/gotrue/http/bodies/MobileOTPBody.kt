@@ -5,8 +5,20 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class MobileOTPBody(
-    val phone: String
-)
+    val phone: String,
+    @SerialName("create_user") val createUser: Boolean,
+    @SerialName("gotrue_meta_security") val goTrueMetaSecurity: GoTrueMetaSecurity
+) {
+    constructor(
+        phone: String,
+        createUser: Boolean,
+        captchaToken: String?
+    ) : this(
+        phone = phone,
+        createUser = createUser,
+        goTrueMetaSecurity = GoTrueMetaSecurity(hCaptchaToken = captchaToken)
+    )
+}
 
 @Serializable
 data class VerifyMobileOTPBody(

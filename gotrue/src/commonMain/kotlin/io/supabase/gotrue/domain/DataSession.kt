@@ -1,6 +1,5 @@
-package io.supabase.gotrue.types
+package io.supabase.gotrue.domain
 
-import io.supabase.gotrue.domain.Session
 import kotlinx.serialization.Serializable
 
 @Serializable

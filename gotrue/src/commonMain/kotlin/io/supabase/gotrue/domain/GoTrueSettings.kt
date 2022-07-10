@@ -1,4 +1,4 @@
-package io.supabase.gotrue.types
+package io.supabase.gotrue.domain
 
 import kotlinx.serialization.Serializable
 

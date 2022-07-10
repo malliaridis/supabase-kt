@@ -8,17 +8,23 @@ enum class Provider {
     azure,
     bitbucket,
     discord,
-    email,
+
+    // email,
     facebook,
     github,
     gitlab,
     google,
-    phone,
-    saml,
+    keycloak,
+    linkedin,
+    notion,
+
+    // phone,
+    // saml,
     slack,
     spotify,
     twitch,
-    twitter
+    twitter,
+    workos
 }
 
 @Serializable

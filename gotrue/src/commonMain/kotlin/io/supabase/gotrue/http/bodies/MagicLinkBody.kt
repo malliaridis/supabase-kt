@@ -1,14 +1,25 @@
 package io.supabase.gotrue.http.bodies
 
-import io.supabase.gotrue.domain.MagicLinkType
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 
 @Serializable
 data class MagicLinkEmailBody(
-    val email: String
-)
+    val email: String,
+    @SerialName("create_user") val createUser: Boolean,
+    @SerialName("gotrue_meta_security") val goTrueMetaSecurity: GoTrueMetaSecurity
+) {
+    constructor(
+        email: String,
+        createUser: Boolean,
+        captchaToken: String?
+    ) : this(
+        email = email,
+        createUser = createUser,
+        goTrueMetaSecurity = GoTrueMetaSecurity(hCaptchaToken = captchaToken)
+    )
+}
 
 @Serializable
 data class MagicLinkGenerationBody(
@@ -19,3 +30,11 @@ data class MagicLinkGenerationBody(
     @SerialName("redirect_to")
     val redirectTo: String?
 )
+
+@Serializable
+enum class MagicLinkType {
+    signup,
+    magiclink,
+    recovery,
+    invite
+}

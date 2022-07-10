@@ -3,9 +3,7 @@ package io.supabase.gotrue
 import io.ktor.client.*
 import io.ktor.client.utils.*
 import io.ktor.http.*
-import io.supabase.gotrue.domain.Provider
-import io.supabase.gotrue.domain.Session
-import io.supabase.gotrue.domain.UserInfo
+import io.supabase.gotrue.domain.*
 import io.supabase.gotrue.helper.*
 import io.supabase.gotrue.http.*
 import io.supabase.gotrue.http.errors.ApiError
@@ -14,7 +12,6 @@ import io.supabase.gotrue.http.results.SessionResult
 import io.supabase.gotrue.http.results.UserDataResult
 import io.supabase.gotrue.http.results.UserSessionResult
 import io.supabase.gotrue.json.deserialize
-import io.supabase.gotrue.types.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -39,7 +36,7 @@ open class GoTrueClient(
     /**
      * The currently logged in user or null.
      */
-    private var currentUser: UserInfo? = null
+    private var currentUser: User? = null
 
     /**
      * The session object for the currently logged in user or null.
@@ -183,12 +180,12 @@ open class GoTrueClient(
             val response = api.verifyMobileOTP(phone, token, redirectTo)
 
             var session: Session? = null
-            var user: UserInfo? = null
+            var user: User? = null
 
             when (response) {
                 is UserSessionResult.SessionSuccess -> {
                     session = response.data
-                    user = session.user as UserInfo
+                    user = session.user as User
                     saveSession(session)
                     notifyAllSubscribers(AuthChangeEvent.SIGNED_IN)
                 }
@@ -211,7 +208,7 @@ open class GoTrueClient(
      *
      * For server-side management, you can get a user through `auth.api.getUserByCookie()`
      */
-    fun user(): UserInfo? {
+    fun user(): User? {
         return currentUser
     }
 

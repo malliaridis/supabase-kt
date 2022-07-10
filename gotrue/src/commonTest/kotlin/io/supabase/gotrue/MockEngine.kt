@@ -8,7 +8,7 @@ import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.supabase.gotrue.domain.AppMetadata
 import io.supabase.gotrue.domain.Session
-import io.supabase.gotrue.domain.UserInfo
+import io.supabase.gotrue.domain.User
 import io.supabase.gotrue.http.bodies.RefreshAccessTokenBody
 import io.supabase.gotrue.http.bodies.SignInEmailBody
 import io.supabase.gotrue.http.errors.ServerError
@@ -148,7 +148,7 @@ private suspend fun MockRequestHandleScope.handleRefresh(request: HttpRequestDat
     }
 }
 
-fun generateUser() = UserInfo(
+fun generateUser() = User(
     id = "some-uuid",
     aud = "my-aud",
     role = "authenticated",

@@ -1,7 +1,7 @@
 package io.supabase.gotrue.http
 
+import io.supabase.gotrue.domain.Subscription
 import io.supabase.gotrue.http.errors.ApiError
-import io.supabase.gotrue.types.Subscription
 
 data class SubscriptionResponse(
     val data: Subscription? = null,

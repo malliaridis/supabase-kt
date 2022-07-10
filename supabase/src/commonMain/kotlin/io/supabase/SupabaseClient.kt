@@ -6,7 +6,7 @@ import io.ktor.http.*
 import io.ktor.websocket.*
 import io.supabase.builder.SupabaseQueryBuilder
 import io.supabase.gotrue.GoTrueClient
-import io.supabase.gotrue.types.SupportedStorage
+import io.supabase.gotrue.domain.SupportedStorage
 import io.supabase.http.SupabaseAuthClient
 import io.supabase.postgrest.PostgrestClient
 import io.supabase.postgrest.builder.Count

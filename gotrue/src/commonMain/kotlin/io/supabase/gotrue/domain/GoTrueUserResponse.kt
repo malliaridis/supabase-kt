@@ -1,7 +1,9 @@
-package io.supabase.gotrue.types
+package io.supabase.gotrue.domain
 
 import kotlinx.datetime.UtcOffset
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class GoTrueUserResponse(
     val id: String,
     val email: String,
