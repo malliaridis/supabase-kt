@@ -1,5 +1,6 @@
 package io.supabase.gotrue.http
 
+import io.ktor.http.*
 import io.supabase.gotrue.domain.Provider
 import io.supabase.gotrue.domain.Session
 import io.supabase.gotrue.domain.User
@@ -10,7 +11,7 @@ data class SignInResponse(
     val session: Session? = null,
     val user: User? = null,
     val provider: Provider? = null,
-    val url: String? = null,
+    val url: Url? = null,
     val error: ApiError? = null,
     val data: Session? = null
 )

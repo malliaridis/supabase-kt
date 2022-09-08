@@ -17,7 +17,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
 
 /**
  * Create a new client for use in the browser.
@@ -34,12 +34,12 @@ open class GoTrueClient(
 ) {
 
     /**
-     * The currently logged in user or null.
+     * The currently logged-in user or null.
      */
     private var currentUser: User? = null
 
     /**
-     * The session object for the currently logged in user or null.
+     * The session object for the currently logged-in user or null.
      */
     private var currentSession: Session? = null
 
@@ -63,16 +63,16 @@ open class GoTrueClient(
     private var refreshTokenTimer: Timer? = null
 
     // TODO See how to handle URL sessions
-//    suspend fun initAsync() {
-//        recoverSession()
-//        recoverAndRefresh()
-//
-//        // Handle the OAuth redirect
-//        if (detectSessionInUrl && isBrowser() && getParameterByName("access_token") != null) {
-//            val result = getSessionFromUrl(true)
-//            if (result.error != null) println("Error getting session from URL. ${result.error}")
-//        }
-//    }
+    suspend fun initAsync() {
+        recoverSession()
+        recoverAndRefresh()
+
+        // Handle the OAuth redirect
+        if (detectSessionInUrl && isBrowser() && getParameterByName("access_token") != null) {
+            val result = getSessionFromUrl(true)
+            if (result.error != null) println("Error getting session from URL. ${result.error}")
+        }
+    }
 
     /**
      * Creates a new user.
@@ -88,13 +88,14 @@ open class GoTrueClient(
         password: String? = null,
         phone: String? = null,
         redirectTo: String? = null,
-        data: JsonElement? = null
+        data: JsonObject? = null,
+        captchaToken: String? = null
     ): UserSessionResult { // TODO See if the return value is necessary or could be simplified
         removeSession()
 
         val result: UserSessionResult =
-            if (email != null && password != null) api.signUpWithEmail(email, password, redirectTo, data)
-            else if (phone != null && password != null) api.signUpWithPhone(phone, password, data)
+            if (email != null && password != null) api.signUpWithEmail(email, password, redirectTo, data, captchaToken)
+            else if (phone != null && password != null) api.signUpWithPhone(phone, password, data, captchaToken)
             else UserSessionResult.Failure(ApiError("Invalid parameters provided (client)", 400))
 
         when (result) {
@@ -165,19 +166,18 @@ open class GoTrueClient(
 
     /**
      * Log in a user given a User supplied OTP received via mobile.
-     * @param phone The user's phone number.
+     * @param params The user's email or phone number.
      * @param token The user's password.
      * @param redirectTo A URL or mobile address to send the user to after they are confirmed.
      */
     suspend fun verifyOTP(
-        phone: String,
-        token: String,
+        params: VerifyOTPParams,
         redirectTo: String? = null
     ): SignInResponse {
         try {
             this.removeSession()
 
-            val response = api.verifyMobileOTP(phone, token, redirectTo)
+            val response = api.verifyOTP(params, redirectTo)
 
             var session: Session? = null
             var user: User? = null
@@ -204,7 +204,7 @@ open class GoTrueClient(
     }
 
     /**
-     * Inside a browser context, `user()` will return the user data, if there is a logged in user.
+     * Inside a browser context, `user()` will return the user data, if there is a logged-in user.
      *
      * For server-side management, you can get a user through `auth.api.getUserByCookie()`
      */
@@ -230,7 +230,7 @@ open class GoTrueClient(
     }
 
     /**
-     * Updates user data, if there is a logged in user.
+     * Updates user data, if there is a logged-in user.
      */
     suspend fun update(attributes: UserAttributes): UserUpdateResponse {
         val cSession = currentSession ?: return UserUpdateResponse(error = ApiError("No session found.", -1))
@@ -283,47 +283,47 @@ open class GoTrueClient(
      * @param storeSession Optionally store the session in the browser
      */
     suspend fun getSessionFromUrl(storeSession: Boolean = false): SessionResponse {
-//        if (!isBrowser()) throw Exception("No browser detected.")
-//
-//        val errorDescription = getParameterByName("error_description")
-//        if (errorDescription != null) throw Exception(errorDescription)
-//
-//        val providerToken = getParameterByName("provider_token")
-//
-//        val accessToken = getParameterByName("access_token") ?: throw Exception("No access_token detected.")
-//
-//        val expiresIn = getParameterByName("expires_in") ?: throw Exception("No expires_in detected.")
-//
-//        val refreshToken = getParameterByName("refresh_token") ?: throw Exception("No refresh_token detected.")
-//
-//        val tokenType = getParameterByName("token_type") ?: throw Exception("No token_type detected.")
-//
-//        return when (val result = api.getUser(accessToken)) {
-//            is UserDataResult.Success -> {
-//                val session = Session(
-//                    providerToken = providerToken,
-//                    accessToken = accessToken,
-//                    expiresIn = expiresIn.toLong(),
-//                    refreshToken = refreshToken,
-//                    tokenType = tokenType,
-//                    user = result.user,
-//                )
-//                if (storeSession) {
-//                    saveSession(session)
-//                    notifyAllSubscribers(AuthChangeEvent.SIGNED_IN)
-//                    if (getParameterByName("type") == "recovery") {
-//                        notifyAllSubscribers(AuthChangeEvent.PASSWORD_RECOVERY)
-//                    }
-//                }
-//                SessionResponse(data = session)
-//            }
-//            is UserDataResult.Failure -> SessionResponse(error = result.error)
-//        }
-        TODO("See if there is a use case for this")
+        if (!isBrowser()) throw Exception("No browser detected.")
+
+        val errorDescription = getParameterByName("error_description")
+        if (errorDescription != null) throw Exception(errorDescription)
+
+        val providerToken = getParameterByName("provider_token")
+
+        val accessToken = getParameterByName("access_token") ?: throw Exception("No access_token detected.")
+
+        val expiresIn = getParameterByName("expires_in") ?: throw Exception("No expires_in detected.")
+
+        val refreshToken = getParameterByName("refresh_token") ?: throw Exception("No refresh_token detected.")
+
+        val tokenType = getParameterByName("token_type") ?: throw Exception("No token_type detected.")
+
+        return when (val result = api.getUser(accessToken)) {
+            is UserDataResult.Success -> {
+                val session = Session(
+                    providerToken = providerToken,
+                    accessToken = accessToken,
+                    expiresIn = expiresIn.toLong(),
+                    refreshToken = refreshToken,
+                    tokenType = tokenType,
+                    user = result.user,
+                )
+                if (storeSession) {
+                    saveSession(session)
+                    notifyAllSubscribers(AuthChangeEvent.SIGNED_IN)
+                    if (getParameterByName("type") == "recovery") {
+                        notifyAllSubscribers(AuthChangeEvent.PASSWORD_RECOVERY)
+                    }
+                }
+                SessionResponse(data = session)
+            }
+
+            is UserDataResult.Failure -> SessionResponse(error = result.error)
+        }
     }
 
     /**
-     * Inside a browser context, `signOut()` will remove the logged in user from the browser session
+     * Inside a browser context, `signOut()` will remove the logged-in user from the browser session
      * and log them out - removing all items from localstorage and then trigger a "SIGNED_OUT" event.
      *
      * For server-side management, you can disable sessions by passing a JWT through to `auth.api.signOut(JWT: string)`
@@ -386,9 +386,10 @@ open class GoTrueClient(
     private fun handleProviderSignIn(
         provider: Provider,
         redirectTo: String? = null,
-        scopes: String? = null
+        scopes: String? = null,
+        queryParams: Map<String, String>? = null
     ): SignInResponse {
-        val url: String = api.getUrlForProvider(provider, redirectTo, scopes)
+        val url: Url = api.getUrlForProvider(provider, redirectTo, scopes, queryParams)
 
         // TODO See how to handle provider sign in
         return SignInResponse(provider = provider, url = url)

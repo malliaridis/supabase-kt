@@ -171,7 +171,6 @@ fun generateSession() = Session(
     accessToken = generateAccessToken(),
     expiresIn = 3600,
     refreshToken = generateRefreshToken(),
-    scope = null,
     user = generateUser(),
     tokenType = "bearer"
 )

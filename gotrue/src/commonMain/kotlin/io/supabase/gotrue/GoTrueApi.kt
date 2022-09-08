@@ -285,41 +285,30 @@ class GoTrueApi(
         }
     }
 
-    // TODO Implement verifyOTP
-    /*
-        /**
-       * Send User supplied Email / Mobile OTP to be verified
-       * @param email The user's email address
-       * @param phone The user's phone number WITH international prefix
-       * @param token token that user was sent to their mobile phone
-       * @param type verification type that the otp is generated for
-       * @param redirectTo A URL or mobile address to send the user to after they are confirmed.
-       */
-      async verifyOTP(
-        { email, phone, token, type = 'sms' }: VerifyOTPParams,
-        options: {
-          redirectTo?: string
-        } = {}
-      ): Promise<{ data: Session | User | null; error: ApiError | null }> {
-        try {
-          const headers = { ...this.headers }
-          const data = await post(
-            this.fetch,
-            `${this.url}/verify`,
-            { email, phone, token, type, redirect_to: options.redirectTo },
-            { headers }
-          )
-          const session = { ...data }
-          if (session.expires_in) session.expires_at = expiresAt(data.expires_in)
-          return { data: session, error: null }
-        } catch (e) {
-          return { data: null, error: e as ApiError }
-        }
-      }
+    /**
+     * Send User supplied Email / Mobile OTP to be verified
+     * @param params The OTP parameters.
+     * @param redirectTo A URL or mobile address to send the user to after they are confirmed.
      */
+    suspend fun verifyOTP(
+        params: VerifyOTPParams,
+        redirectTo: String? = null
+    ): UserSessionResult {
+        return try {
+            authClient.post("$url/verify") {
+                headers { this@GoTrueApi.headers }
+                TODO("Write OTPRequestBody")
+                // { email, phone, token, type, redirect_to: options.redirectTo },
+            }.body()
+
+            // Removed expiresAt logic since result does not contain expiresIn value
+        } catch (e: Exception) {
+            UserSessionResult.Failure(error = ApiError(e.message!!, -1))
+        }
+    }
 
     /**
-     * Sends an invite link to an email address.
+     * Sends an invitation link to an email address.
      * @param email The email address of the user.
      * @param redirectTo A URL or mobile address to send the user to after they are confirmed.
      * @param data Optional user metadata
@@ -359,11 +348,19 @@ class GoTrueApi(
     }
 
     /**
-     * Gets the user details.
+     * Gets the current user details.
+     *
+     * This method is called by the GoTrueClient `update` where
+     * the jwt is set to this.currentSession.access_token
+     * and therefore, acts like getting the currently authenticated user
+     *
+     * @param jwt A valid, logged-in JWT. Typically, the access_token for the currentSession
      */
-    suspend fun getUser(): UserDataResult {
+    suspend fun getUser(jwt: String): UserDataResult {
         return try {
-            val response: User = authClient.get("$url/user").body()
+            val response: User = authClient.get("$url/user") {
+                headers { createRequestHeaders(jwt) }
+            }.body()
             UserDataResult.Success(response, response)
         } catch (error: ApiError) {
             UserDataResult.Failure(error)

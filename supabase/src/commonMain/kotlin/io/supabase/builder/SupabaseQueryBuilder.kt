@@ -24,10 +24,11 @@ class SupabaseQueryBuilder<T : Any>(
      * @param event The database event which you would like to receive updates for, or you can use the special wildcard `*` to listen to all changes.
      * @param callback A callback that will handle the payload that is sent whenever your database changes.
      */
-    fun on(event: SupabaseEventTypes, callback: (payload: SupabaseRealtimePayload<*>) -> Unit): SupabaseRealtimeClient {
-        if (!realtime.isConnected()) {
-            realtime.connect()
-        }
+    fun on(
+        event: SupabaseEventTypes,
+        callback: (payload: SupabaseRealtimePayload<Any?>) -> Unit
+    ): SupabaseRealtimeClient {
+        if (!realtime.isConnected()) realtime.connect()
         return subscription.on(event, callback)
     }
 }

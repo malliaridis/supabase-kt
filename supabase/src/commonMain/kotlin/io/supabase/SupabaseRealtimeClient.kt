@@ -8,42 +8,23 @@ import io.supabase.types.SupabaseEventTypes
 import io.supabase.types.SupabaseRealtimePayload
 
 class SupabaseRealtimeClient(
-    private val socket: RealtimeClient,
-    private val headers: Headers,
-    private val schema: String?,
-    private val tableName: String
+    socket: RealtimeClient,
+    headers: Headers,
+    schema: String,
+    tableName: String
 ) {
 
-
-    val chanParams: MutableMap<String, String> = mutableMapOf()
-    val topic = if (tableName == "*") "realtime:$schema" else "realtime:$schema:$tableName"
-    private val userToken = headers["Authorization"]?.split(" ")?.get(1)
+    private val userToken: String? = headers["Authorization"]?.split(" ")?.getOrNull(1)
+    private val chanParams: Map<String, String> =
+        if (userToken != null) mapOf("user_token" to userToken) else emptyMap()
+    private val topic = if (tableName == "*") "realtime:$schema" else "realtime:$schema:$tableName"
 
     val subscription: RealtimeSubscription = socket.channel(topic, chanParams)
 
-    init {
-        if (userToken != null) {
-            chanParams["user_token"] = userToken
-        }
-    }
-
-    // TODO Replace with type casting and handling of INSERT, UPDATE, DELETE payloads
-    private fun <T> getPayloadRecords(payload: SupabaseRealtimePayload<T>): SimplePayload<T>? {
-//        val records = {
-//            new: {},
-//            old: {},
-//        }
-//
-//        if (payload.type == "INSERT" || payload.type == "UPDATE") {
-//            records.new = Transformers.convertChangeData(payload.columns, payload.record)
-//        }
-//
-//        if (payload.type == "UPDATE" || payload.type == "DELETE") {
-//            records.old = Transformers.convertChangeData(payload.columns, payload.old_record)
-//        }
-
-        return null
-    }
+    private fun <T> getPayloadRecords(payload: SupabaseRealtimePayload<T?>): SimplePayload<T?> = SimplePayload(
+        new = if (payload.eventType.isInsertOrUpdate) payload.new else null,
+        old = if (payload.eventType.isUpdateOrDelete) payload.old else null
+    )
 
     /**
      * The event you want to listen to.
@@ -51,26 +32,23 @@ class SupabaseRealtimeClient(
      * @param event The event
      * @param callback A callback function that is called whenever the event occurs.
      */
-    fun on(
+    fun <T> on(
         event: SupabaseEventTypes,
-        callback: (payload: SupabaseRealtimePayload<*>) -> Unit
+        callback: (payload: SupabaseRealtimePayload<T?>) -> Unit
     ): SupabaseRealtimeClient {
         subscription.on(event.toString()) { payload: Any?, _ ->
-            if (payload is SupabaseRealtimePayload<*>) {
-
-                val enrichedPayload = SupabaseRealtimePayload(
-                    schema = payload.schema,
-                    table = payload.table,
-                    commit_timestamp = payload.commit_timestamp,
-                    eventType = payload.eventType,
-                    new = {},
-                    old = {},
+            if (payload is SupabaseRealtimePayload<*>) try {
+                // TODO See if this is sufficient
+                callback(payload as SupabaseRealtimePayload<T?>)
+            } catch (exception: Exception) {
+                callback(
+                    SupabaseRealtimePayload(
+                        schema = payload.schema,
+                        table = payload.table,
+                        commitTimestamp = payload.commitTimestamp,
+                        eventType = payload.eventType,
+                    )
                 )
-
-                // TODO Set new and old payload data by parsing them properly
-//                enrichedPayload = { ...enrichedPayload, ...getPayloadRecords(payload) }
-
-                callback(enrichedPayload)
             }
         }
         return this

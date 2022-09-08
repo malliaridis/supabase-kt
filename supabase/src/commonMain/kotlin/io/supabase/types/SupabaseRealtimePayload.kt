@@ -1,10 +1,14 @@
 package io.supabase.types
 
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class SupabaseRealtimePayload<T>(
 
-    val commit_timestamp: String,
+    @SerialName("commit_timestamp") val commitTimestamp: String,
 
-    val eventType: SupabaseEventTypes,
+    @SerialName("type") val eventType: SupabaseEventTypes,
 
     val schema: String,
 
@@ -13,12 +17,12 @@ data class SupabaseRealtimePayload<T>(
     /**
      * The new record. Present for 'INSERT' and 'UPDATE' events.
      */
-    val new: T,
+    @SerialName("record") val new: T? = null,
 
     /**
      * The previous record. Present for 'UPDATE' and 'DELETE' events.
      */
-    val old: T
+    @SerialName("old_record") val old: T? = null,
 )
 
 data class SimplePayload<T>(
@@ -26,10 +30,10 @@ data class SimplePayload<T>(
     /**
      * The new record. Present for 'INSERT' and 'UPDATE' events.
      */
-    val new: T,
+    val new: T?,
 
     /**
      * The previous record. Present for 'UPDATE' and 'DELETE' events.
      */
-    val old: T
+    val old: T?
 )

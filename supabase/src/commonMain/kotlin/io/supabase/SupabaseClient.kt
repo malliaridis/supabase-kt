@@ -43,7 +43,7 @@ open class SupabaseClient(
     private val headers: Headers = headersOf(),
 
     /**
-     * Automatically refreshes the token for logged in users.
+     * Automatically refreshes the token for logged-in users.
      */
     private val autoRefreshToken: Boolean = true,
 
@@ -95,8 +95,9 @@ open class SupabaseClient(
     init {
         if (supabaseUrl.isBlank()) throw IllegalArgumentException("supabaseUrl should not be empty.")
         if (supabaseKey.isBlank()) throw IllegalArgumentException("supabaseKey should not be empty.")
-        // TODO Add URL validation
-        // TODO Check if supabase URL ends with slash (URLs are concatenated with slash and would cause double slash)
+
+        // Try to parse url and fail by throwing URLParserException if invalid URL
+        URLBuilder(urlString = supabaseUrl)
     }
 
     /**
@@ -169,12 +170,10 @@ open class SupabaseClient(
         return GoTrueClient(
             url = authUrl,
             headers = authHeaders,
-            // TODO See if the below data need to be passed
-//            autoRefreshToken = autoRefreshToken,
-//            persistSession = persistSession,
-//            detectSessionInUrl = detectSessionInUrl,
-//            localStorage = localStorage,
-            // fetch: this.fetch, // TODO See if there is a client necessary to pass
+            autoRefreshToken = autoRefreshToken,
+            persistSession = persistSession,
+            detectSessionInUrl = detectSessionInUrl,
+            localStorage = localStorage,
             httpClient = httpClient
         )
     }
