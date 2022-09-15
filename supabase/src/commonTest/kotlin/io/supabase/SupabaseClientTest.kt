@@ -3,15 +3,18 @@ package io.supabase
 import io.supabase.domain.Todo
 import io.supabase.gotrue.http.results.SessionResult
 import io.supabase.helper.getClient
-import io.supabase.helper.runTest
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.runTest
 import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
+@OptIn(ExperimentalCoroutinesApi::class)
 internal class SupabaseClientTest {
 
     @Test
+    @Ignore
     fun signIn_should_work() = runTest {
         val supabase = getClient()
         val result = supabase.auth.signIn(email = "my@email.com", password = "password")
@@ -20,14 +23,13 @@ internal class SupabaseClientTest {
     }
 
     @Test
-    @Ignore
+    @Ignore // Test not working yet
     fun rest_request_should_be_authenticated() = runTest {
         val supabase = getClient()
         supabase.auth.signIn(email = "my@email.com", password = "password")
 
         val todos: List<Todo> = supabase.from<Todo>("todos").select().executeAndGetList()
         assertTrue(todos.isNotEmpty(), "TODOs should not be empty.")
-
     }
 
     /*

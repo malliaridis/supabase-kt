@@ -5,6 +5,7 @@ import io.ktor.client.engine.mock.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
+import io.ktor.util.*
 import io.supabase.postgrest.PostgrestClient
 import io.supabase.postgrest.domain.ServerError
 import io.supabase.postgrest.domain.Todo
@@ -27,8 +28,12 @@ fun getMockClient(): HttpClient {
             addHandler { request ->
                 when (request.url.encodedPath) {
                     "/rest/v1/todos" -> {
+
+                        val content = getSamplesTodos()
+                            .filterById(request.url.parameters["id"])
+
                         respond(
-                            content = Json.encodeToString(getSamplesTodos()),
+                            content = Json.encodeToString(content),
                             status = HttpStatusCode.OK,
                             headers = headersOf(
                                 HttpHeaders.ContentType to listOf("application/json"),
@@ -41,6 +46,12 @@ fun getMockClient(): HttpClient {
             }
         }
     }
+}
+
+private fun List<Todo>.filterById(idOrNull: Any?): List<Todo> = when (idOrNull) {
+    "eq.my-id" -> filter { it.id == "my-id" }
+    "eq.my-id2" -> filter { it.id == "my-id2" }
+    else -> this
 }
 
 fun generateError(): ServerError {

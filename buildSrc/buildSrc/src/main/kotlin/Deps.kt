@@ -50,7 +50,13 @@ object Deps {
             const val testAnnotationsCommon = "org.jetbrains.kotlin:kotlin-test-annotations-common:$VERSION"
         }
 
-        object Kotlinx {
+        object KotlinX {
+            object Coroutines {
+                private const val VERSION = "1.6.4"
+
+                const val core = "org.jetbrains.kotlinx:kotlinx-coroutines-core:$VERSION"
+                const val test = "org.jetbrains.kotlinx:kotlinx-coroutines-test:$VERSION"
+            }
             const val coroutinesCore = "org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinCoroutines}"
             const val dateTime = "org.jetbrains.kotlinx:kotlinx-datetime:${Versions.kotlinDateTime}"
             const val serialization = "org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.0"

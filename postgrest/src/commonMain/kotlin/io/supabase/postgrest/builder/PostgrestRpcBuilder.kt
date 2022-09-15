@@ -26,8 +26,8 @@ class PostgrestRpcBuilder<T : @Serializable Any>(
 
             if (params != null && params is Map<*, *>) {
                 // TODO Change Map<String, String> to Map<String, Serializable>
-                (params as? Map<String, String>)?.forEach { (key, value) ->
-                    setSearchParam(key, value)
+                (params as? Map<*, *>)?.forEach { (key, value) ->
+                    if (key is String && value is String) setSearchParam(key , value)
                 }
             }
         } else {

@@ -1,8 +1,11 @@
 package io.supabase.gotrue
 
 import io.supabase.gotrue.http.results.SessionResult
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.runTest
 import kotlin.test.*
 
+@OptIn(ExperimentalCoroutinesApi::class)
 internal class GoTrueClientTest {
 
     @Test

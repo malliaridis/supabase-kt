@@ -1,5 +1,6 @@
 plugins {
     kotlin("multiplatform")
+    kotlin("plugin.serialization")
 }
 
 kotlin {
@@ -31,7 +32,7 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation(Deps.JetBrains.Kotlinx.serialization)
+                implementation(Deps.JetBrains.KotlinX.serialization)
 
                 with (Deps.Ktor.Client) {
                     implementation(core)
@@ -39,24 +40,34 @@ kotlin {
                     implementation(auth)
                 }
                 implementation(Deps.Ktor.Serialization.json)
-
-                with (Deps.JetBrains.Kotlinx) {
-                    implementation(dateTime)
-                    implementation(coroutinesCore)
-                }
+                implementation(Deps.JetBrains.KotlinX.dateTime)
+                implementation(Deps.JetBrains.KotlinX.Coroutines.core)
             }
         }
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))
                 implementation(Deps.Ktor.Client.mock)
+                implementation(Deps.JetBrains.KotlinX.Coroutines.test)
             }
         }
-        val jvmMain by getting
+        val jvmMain by getting {
+            dependencies {
+                implementation(Deps.Ktor.Client.cio)
+            }
+        }
         val jvmTest by getting
-        val jsMain by getting
+        val jsMain by getting {
+            dependencies {
+                implementation(Deps.Ktor.Client.js)
+            }
+        }
         val jsTest by getting
-        val nativeMain by getting
+        val nativeMain by getting {
+            dependencies {
+                implementation(Deps.Ktor.Client.cio)
+            }
+        }
         val nativeTest by getting
     }
 }
