@@ -4,6 +4,7 @@ import io.supabase.domain.Todo
 import io.supabase.gotrue.http.results.SessionResult
 import io.supabase.helper.getClient
 import io.supabase.helper.runTest
+import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -19,6 +20,7 @@ internal class SupabaseClientTest {
     }
 
     @Test
+    @Ignore
     fun rest_request_should_be_authenticated() = runTest {
         val supabase = getClient()
         supabase.auth.signIn(email = "my@email.com", password = "password")

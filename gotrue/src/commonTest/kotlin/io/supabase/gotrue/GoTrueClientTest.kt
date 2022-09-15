@@ -11,6 +11,7 @@ internal class GoTrueClientTest {
     }
 
     @Test
+    @Ignore
     fun signIn_should_succeed_with_correct_credentials() = runTest {
         val client = getClient()
 
@@ -18,6 +19,7 @@ internal class GoTrueClientTest {
     }
 
     @Test
+    @Ignore
     fun signIn_should_fail_with_invalid_credentials() = runTest {
         val client = getClient()
 
@@ -40,6 +42,7 @@ internal class GoTrueClientTest {
     }
 
     @Test
+    @Ignore
     fun signOut_should_return_null_if_not_signed_in() = runTest {
         val client = getClient()
 
@@ -48,6 +51,7 @@ internal class GoTrueClientTest {
     }
 
     @Test
+    @Ignore
     fun user_should_be_null_when_not_authenticated() {
         val client = getClient()
 
@@ -55,6 +59,7 @@ internal class GoTrueClientTest {
     }
 
     @Test
+    @Ignore
     fun user_should_not_be_null_when_authenticated() = runTest {
         val client = getClient()
 
@@ -65,6 +70,7 @@ internal class GoTrueClientTest {
     }
 
     @Test
+    @Ignore
     fun user_should_be_null_after_sign_out() = runTest {
         val client = getClient()
 
@@ -77,6 +83,7 @@ internal class GoTrueClientTest {
     }
 
     @Test
+    @Ignore
     fun session_should_be_null_when_not_authenticated() = runTest {
         val client = getClient()
 
@@ -90,6 +97,7 @@ internal class GoTrueClientTest {
     }
 
     @Test
+    @Ignore
     fun session_should_not_be_null_when_authenticated() = runTest {
         val client = getClient()
 
@@ -99,6 +107,7 @@ internal class GoTrueClientTest {
     }
 
     @Test
+    @Ignore
     fun session_should_equal_sign_in_response_data() = runTest {
         val client = getClient()
 
@@ -110,6 +119,7 @@ internal class GoTrueClientTest {
     }
 
     @Test
+    @Ignore
     fun refreshSession_should_update_existing_session() = runTest {
         val client = getClient()
 

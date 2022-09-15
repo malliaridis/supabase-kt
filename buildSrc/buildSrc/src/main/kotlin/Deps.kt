@@ -5,10 +5,7 @@ object Versions {
 
     const val jvmTarget = "11"
 
-    const val kotlin = "1.6.21"
     const val kotlinCoroutines = "1.6.1"
-    const val ktor = "2.0.2"
-    const val kotlinxSerialization = "1.3.2" // 1.3.3
     const val kotlinDateTime = "0.3.2" // 0.3.3
 
     const val junit = "4.13.2"
@@ -26,9 +23,7 @@ object Deps {
 
     object Gradle {
         object Plugins {
-            const val androidBuildTools = "com.android.tools.build:gradle:7.0.4"
-            const val kotlin = "org.jetbrains.kotlin:kotlin-gradle-plugin:${Versions.kotlin}"
-            const val serialization = "org.jetbrains.kotlin:kotlin-serialization:${Versions.kotlin}"
+            const val androidBuildTools = "com.android.tools.build:gradle:7.2.2"
         }
     }
 
@@ -45,40 +40,49 @@ object Deps {
 
     object JetBrains {
         object Kotlin {
-            const val gradlePlugin = "org.jetbrains.kotlin:kotlin-gradle-plugin:${Versions.kotlin}"
-            const val testCommon = "org.jetbrains.kotlin:kotlin-test-common:${Versions.kotlin}"
-            const val testJUnit = "org.jetbrains.kotlin:kotlin-test-junit:${Versions.kotlin}"
-            const val testJs = "org.jetbrains.kotlin:kotlin-test-js:${Versions.kotlin}"
-            const val testAnnotationsCommon = "org.jetbrains.kotlin:kotlin-test-annotations-common:${Versions.kotlin}"
+            const val VERSION = "1.7.10"
+            
+            const val gradlePlugin = "org.jetbrains.kotlin:kotlin-gradle-plugin:$VERSION"
+            const val serialization = "org.jetbrains.kotlin:kotlin-serialization:$VERSION"
+            const val testCommon = "org.jetbrains.kotlin:kotlin-test-common:$VERSION"
+            const val testJUnit = "org.jetbrains.kotlin:kotlin-test-junit:$VERSION"
+            const val testJs = "org.jetbrains.kotlin:kotlin-test-js:$VERSION"
+            const val testAnnotationsCommon = "org.jetbrains.kotlin:kotlin-test-annotations-common:$VERSION"
         }
 
         object Kotlinx {
             const val coroutinesCore = "org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinCoroutines}"
             const val dateTime = "org.jetbrains.kotlinx:kotlinx-datetime:${Versions.kotlinDateTime}"
+            const val serialization = "org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.0"
         }
     }
 
     object Ktor {
+        private const val VERSION = "2.1.1"
+
         object Client {
-            const val core = "io.ktor:ktor-client-core:${Versions.ktor}"
-            const val auth = "io.ktor:ktor-client-auth:${Versions.ktor}"
+
+            const val core = "io.ktor:ktor-client-core:$VERSION"
+            const val auth = "io.ktor:ktor-client-auth:$VERSION"
             // TODO See if this dependency is used at all
-            const val json = "io.ktor:ktor-client-json:${Versions.ktor}"
-            const val logging = "io.ktor:ktor-client-logging:${Versions.ktor}"
-            const val contentNegotiation = "io.ktor:ktor-client-content-negotiation:${Versions.ktor}"
-            const val websockets = "io.ktor:ktor-client-websockets:${Versions.ktor}"
+            const val json = "io.ktor:ktor-client-json:$VERSION"
+            const val logging = "io.ktor:ktor-client-logging:$VERSION"
+            const val contentNegotiation = "io.ktor:ktor-client-content-negotiation:$VERSION"
+            const val websockets = "io.ktor:ktor-client-websockets:$VERSION"
+
+            const val mock = "io.ktor:ktor-client-mock:$VERSION"
 
             // Engines
-            const val android = "io.ktor:ktor-client-android:${Versions.ktor}"
-            const val java = "io.ktor:ktor-client-java:${Versions.ktor}"
-            const val ios = "io.ktor:ktor-client-ios:${Versions.ktor}"
-            const val js = "io.ktor:ktor-client-js:${Versions.ktor}"
-            const val cio = "io.ktor:ktor-client-cio:${Versions.ktor}"
-            const val darwin = "io.ktor:ktor-client-darwin:${Versions.ktor}"
+            const val android = "io.ktor:ktor-client-android:$VERSION"
+            const val java = "io.ktor:ktor-client-java:$VERSION"
+            const val ios = "io.ktor:ktor-client-ios:$VERSION"
+            const val js = "io.ktor:ktor-client-js:$VERSION"
+            const val cio = "io.ktor:ktor-client-cio:$VERSION"
+            const val darwin = "io.ktor:ktor-client-darwin:$VERSION"
         }
 
         object Serialization {
-            const val json = "io.ktor:ktor-serialization-kotlinx-json:${Versions.ktor}"
+            const val json = "io.ktor:ktor-serialization-kotlinx-json:$VERSION"
         }
     }
 
@@ -86,7 +90,6 @@ object Deps {
         const val junit = "junit:junit:${Versions.junit}"
         const val androidXTestJUnit = "androidx.test.ext:junit:${Versions.androidXTestJUnit}"
         const val mockito = "org.mockito:mockito-inline:${Versions.mockito}"
-        const val ktorMock = "io.ktor:ktor-client-mock:${Versions.ktor}"
         const val robolectric = "org.robolectric:robolectric:${Versions.robolectric}"
         const val testCore = "androidx.test:core:${Versions.testCore}"
     }

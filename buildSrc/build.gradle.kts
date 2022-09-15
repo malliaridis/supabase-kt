@@ -9,10 +9,9 @@ repositories {
 
 dependencies {
     with(Deps.Gradle.Plugins) {
-        implementation(kotlin)
         implementation(androidBuildTools)
-        implementation(serialization)
     }
+    implementation(Deps.JetBrains.Kotlin.gradlePlugin)
 }
 
 kotlin {

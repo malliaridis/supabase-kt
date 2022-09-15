@@ -43,7 +43,7 @@ fun convertChangeData(
  * Converts the value of an individual column.
  *
  * @param columnName The column that you want to convert
- * @param columns All of the columns
+ * @param columns All the columns
  * @param record The map of string values
  * @param skipTypes An array of types that should not be converted
  * @return Useless information
@@ -74,7 +74,7 @@ fun convertChangeData(
 
 /**
  * If the value of the cell `null`, returns null.
- * Otherwise converts the string value to the correct type.
+ * Otherwise, converts the string value to the correct type.
  * @param {String} type A postgres column type
  * @param {String} stringValue The cell value
  *
@@ -192,7 +192,7 @@ fun toJson(value: RecordValue): RecordValue {
 //}
 
 /**
- * Fixes timestamp to be ISO-8601. Swaps the space between the date and time for a 'T'
+ * Fixes timestamp to be ISO-8601. Swaps the space between the date and time for a "T".
  * See https://github.com/supabase/supabase/issues/18
  *
  * @example toTimestampString('2019-09-10 00:00:00')

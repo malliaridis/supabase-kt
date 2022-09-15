@@ -60,6 +60,6 @@ fun getSampleResponse() = PostgrestHttpResponse(
     count = 2, error = null
 )
 
-fun getSamplesTodos() = listOf(Todo("my-id", "my text"), Todo("my-id-2", "my text 2"))
+fun getSamplesTodos() = listOf(Todo("my-id", "my text"), Todo("my-id2", "my text 2"))
 
 fun getInvalidHeaders() = headersOf()

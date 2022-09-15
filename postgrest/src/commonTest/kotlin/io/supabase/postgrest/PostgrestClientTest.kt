@@ -4,6 +4,7 @@ import io.supabase.postgrest.domain.Todo
 import io.supabase.postgrest.helper.getClient
 import io.supabase.postgrest.helper.getSamplesTodos
 import io.supabase.postgrest.helper.runTest
+import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -19,6 +20,7 @@ internal class PostgrestClientTest {
     }
 
     @Test
+    @Ignore
     fun should_get_simple_object_by_id() = runTest {
         val client = getClient()
         val todoId = "my-id"

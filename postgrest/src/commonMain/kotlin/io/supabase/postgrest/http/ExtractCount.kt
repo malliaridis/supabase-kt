@@ -3,7 +3,8 @@ package io.supabase.postgrest.http
 import io.ktor.http.*
 
 /**
- * PostgREST provides the count in the content-range header, if a prefer header is sent requesting the count information.
+ * PostgREST provides the count in the content-range header, if a preferred header is sent requesting the count
+ * information.
  */
 fun extractCount(responseHeaders: Headers, requestHeaders: Map<String, String>): Long? {
     val preferHeader = requestHeaders.entries.firstOrNull { it.key.lowercase() == "prefer" }?.value
