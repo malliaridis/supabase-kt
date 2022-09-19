@@ -6,10 +6,10 @@ kotlin {
     sourceSets {
         named("commonMain") {
             dependencies {
-                implementation(project(":gotrue"))
-                implementation(project(":postgrest"))
-                implementation(project(":realtime"))
-                implementation(project(":storage"))
+                api(project(":gotrue"))
+                api(project(":postgrest"))
+                api(project(":realtime"))
+                api(project(":storage"))
             }
         }
     }

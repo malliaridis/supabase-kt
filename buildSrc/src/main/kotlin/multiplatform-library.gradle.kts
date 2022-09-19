@@ -1,18 +1,25 @@
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
+    id("com.android.library")
+    id("maven-publish")
 }
 
 kotlin {
-    jvm {
+    jvm() {
         compilations.all {
-            kotlinOptions.jvmTarget = "16"
+            kotlinOptions.jvmTarget = Deps.jvmTarget
         }
-        withJava()
         testRuns["test"].executionTask.configure {
             useJUnitPlatform()
         }
     }
+
+    android {
+        // Publish only release variant
+        publishLibraryVariants("release")
+    }
+
     js(BOTH) {
         browser {
             commonWebpackConfig {
@@ -20,54 +27,76 @@ kotlin {
             }
         }
     }
-    val hostOs = System.getProperty("os.name")
-    val isMingwX64 = hostOs.startsWith("Windows")
-    val nativeTarget = when {
-        hostOs == "Mac OS X" -> macosX64("native")
-        hostOs == "Linux" -> linuxX64("native")
-        isMingwX64 -> mingwX64("native")
-        else -> throw GradleException("Host OS is not supported in Kotlin/Native.")
+
+    publishing {
+        publications {
+            // Apply group ID and version to all publications
+            group = Deps.group
+            version = Deps.version
+        }
     }
 
     sourceSets {
-        val commonMain by getting {
+        named("commonMain") {
             dependencies {
-                implementation(Deps.JetBrains.KotlinX.serialization)
+                api(Deps.JetBrains.KotlinX.serialization)
 
                 with (Deps.Ktor.Client) {
-                    implementation(core)
-                    implementation(contentNegotiation)
-                    implementation(auth)
+                    api(core)
+                    api(contentNegotiation)
+                    api(auth)
                 }
-                implementation(Deps.Ktor.Serialization.json)
-                implementation(Deps.JetBrains.KotlinX.dateTime)
-                implementation(Deps.JetBrains.KotlinX.Coroutines.core)
+                api(Deps.Ktor.Serialization.json)
+                api(Deps.JetBrains.KotlinX.dateTime)
+                api(Deps.JetBrains.KotlinX.Coroutines.core)
             }
         }
-        val commonTest by getting {
+        named("commonTest") {
             dependencies {
                 implementation(kotlin("test"))
                 implementation(Deps.Ktor.Client.mock)
                 implementation(Deps.JetBrains.KotlinX.Coroutines.test)
             }
         }
-        val jvmMain by getting {
+
+        named("jvmMain") {
             dependencies {
-                implementation(Deps.Ktor.Client.cio)
+                api(Deps.Ktor.Client.cio)
             }
         }
-        val jvmTest by getting
-        val jsMain by getting {
+        named("jvmTest")
+
+        named("jsMain") {
             dependencies {
-                implementation(Deps.Ktor.Client.js)
+                api(Deps.Ktor.Client.js)
             }
         }
-        val jsTest by getting
-        val nativeMain by getting {
-            dependencies {
-                implementation(Deps.Ktor.Client.cio)
-            }
+        named("jsTest")
+    }
+
+    // TODO See if below task changes anything when building / publishing project
+//    tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
+//        kotlinOptions.jvmTarget = Versions.jvmTarget
+//    }
+}
+
+android {
+    compileSdk = Deps.Android.androidCompileSdk
+
+    defaultConfig {
+        minSdk = Deps.Android.androidMinSdk
+        targetSdk = Deps.Android.androidTargetSdk
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+    }
+
+    sourceSets {
+        named("main") {
+            manifest.srcFile("src/androidMain/AndroidManifest.xml")
+            res.srcDirs("src/androidMain/res")
         }
-        val nativeTest by getting
     }
 }

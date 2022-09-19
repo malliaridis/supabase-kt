@@ -1,30 +1,31 @@
-object Versions {
-    const val androidMinSdk = 21
-    const val androidCompileSdk = 31
-    const val androidTargetSdk = androidCompileSdk
-
-    const val jvmTarget = "11"
-
-    const val kotlinCoroutines = "1.6.1"
-    const val kotlinDateTime = "0.3.2" // 0.3.3
-
-    const val junit = "4.13.2"
-    const val androidXTestJUnit = "1.1.3"
-    const val testCore = "1.4.0"
-    const val mockito = "4.6.1"
-    const val robolectric = "4.8.1"
-
-    const val lifecycleKtx = "2.4.0-rc01"
-    const val lifecycleRuntimeKtx = lifecycleKtx
-    const val lifecycleViewmodelKtx = lifecycleKtx
-}
-
 object Deps {
+
+    /**
+     * The libraries' group name
+     */
+    const val group = "io.supabase"
+
+    /**
+     * The libraries' version
+     * TODO Get version from environment / pipeline
+     */
+    const val version: String = "0.1.0"
+
+    /**
+     * JVM target of compilation
+     */
+    const val jvmTarget = "11"
 
     object Gradle {
         object Plugins {
             const val androidBuildTools = "com.android.tools.build:gradle:7.2.2"
         }
+    }
+
+    object Android {
+        const val androidMinSdk = 21
+        const val androidCompileSdk = 33
+        const val androidTargetSdk = androidCompileSdk
     }
 
     object AndroidX {
@@ -57,14 +58,15 @@ object Deps {
                 const val core = "org.jetbrains.kotlinx:kotlinx-coroutines-core:$VERSION"
                 const val test = "org.jetbrains.kotlinx:kotlinx-coroutines-test:$VERSION"
             }
-            const val coroutinesCore = "org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinCoroutines}"
-            const val dateTime = "org.jetbrains.kotlinx:kotlinx-datetime:${Versions.kotlinDateTime}"
+
+            private const val dateTimeVersion = "0.4.0"
+            const val dateTime = "org.jetbrains.kotlinx:kotlinx-datetime:$dateTimeVersion"
             const val serialization = "org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.0"
         }
     }
 
     object Ktor {
-        private const val VERSION = "2.1.1"
+        private const val VERSION = "2.1.1" // "2.1.1-eap-496"
 
         object Client {
 
@@ -84,6 +86,7 @@ object Deps {
             const val ios = "io.ktor:ktor-client-ios:$VERSION"
             const val js = "io.ktor:ktor-client-js:$VERSION"
             const val cio = "io.ktor:ktor-client-cio:$VERSION"
+            const val curl = "io.ktor:ktor-client-curl:$VERSION"
             const val darwin = "io.ktor:ktor-client-darwin:$VERSION"
         }
 
@@ -93,10 +96,13 @@ object Deps {
     }
 
     object Test {
-        const val junit = "junit:junit:${Versions.junit}"
-        const val androidXTestJUnit = "androidx.test.ext:junit:${Versions.androidXTestJUnit}"
-        const val mockito = "org.mockito:mockito-inline:${Versions.mockito}"
-        const val robolectric = "org.robolectric:robolectric:${Versions.robolectric}"
-        const val testCore = "androidx.test:core:${Versions.testCore}"
+        const val junit = "junit:junit:$4.13.2"
+        const val androidXTestJUnit = "androidx.test.ext:junit:1.1.3"
+
+        const val mockito = "org.mockito:mockito-inline:4.6.1"
+        const val testCore = "androidx.test:core:$1.4.0"
+
+        // TODO Remove if not needed anymore
+        const val robolectric = "org.robolectric:robolectric:4.8.1"
     }
 }
