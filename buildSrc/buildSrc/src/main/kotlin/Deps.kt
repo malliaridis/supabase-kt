@@ -9,7 +9,7 @@ object Deps {
      * The libraries' version
      * TODO Get version from environment / pipeline
      */
-    const val version: String = "0.1.0"
+    const val version: String = "0.2.0-build1"
 
     /**
      * JVM target of compilation
@@ -66,7 +66,7 @@ object Deps {
     }
 
     object Ktor {
-        private const val VERSION = "2.1.1" // "2.1.1-eap-496"
+        private const val VERSION = "2.2.1"
 
         object Client {
 

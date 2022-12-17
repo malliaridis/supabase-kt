@@ -36,6 +36,7 @@ open class PostgrestBuilder<T : @Contextual Any>(
         builder.httpClient
     ) {
         this.method = builder.method
+        this.searchParams = builder.searchParams
         this.body = builder.body
     }
 
