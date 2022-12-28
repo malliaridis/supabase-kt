@@ -1,5 +1,3 @@
-package io.supabase.gotrue.main
-
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
 import io.ktor.http.*
@@ -7,7 +5,6 @@ import io.supabase.gotrue.GoTrueClient
 import io.supabase.gotrue.http.results.SessionResult
 import kotlinx.coroutines.runBlocking
 
-// TODO Remove or move this functions to testing
 fun main() {
     runBlocking {
         val goTrueUrl = "${System.getenv("SUPABASE_URL")}/auth/v1"
