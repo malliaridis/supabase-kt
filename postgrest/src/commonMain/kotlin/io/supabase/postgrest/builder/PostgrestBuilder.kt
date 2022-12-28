@@ -80,30 +80,42 @@ open class PostgrestBuilder<T : @Contextual Any>(
                 count = contentRange[1].toLongOrNull()
             }
         }
-        return PostgrestHttpResponse(
+        return if (response.status.isSuccess()) return PostgrestHttpResponse.Success(
             status = response.status.value,
             body = json.decodeFromString(response.bodyAsText()),
             statusText = response.status.description,
+            count = count
+        ) else PostgrestHttpResponse.Failure(
+            status = response.status.value,
+            body = null,
+            statusText = response.status.description,
             count = count,
-            error = null
+            error = json.decodeFromString(response.bodyAsText())
         )
     }
 
     val json = Json { ignoreUnknownKeys = true }
 
-    suspend inline fun <reified R : Any> execute(json: Json = this.json): R {
-        val result = execute()
-        return json.decodeFromJsonElement<PostgrestHttpResponse<R>>(result.body!!).body!!
-    }
+    suspend inline fun <reified R : @Serializable Any> execute(json: Json = this.json): PostgrestHttpResponse<R> {
+        return when (val result = execute()) {
+            is PostgrestHttpResponse.Failure -> {
+                PostgrestHttpResponse.Failure(
+                    status = result.status,
+                    statusText = result.statusText,
+                    body = null,
+                    count = result.count,
+                    error = result.error,
+                )
+            }
 
-    suspend inline fun <reified R : Any> executeAndGetSingle(json: Json = this.json): R {
-        val result = execute()
-        val response = json.decodeFromJsonElement<List<R>>(result.body!!)
-        return response[0]
-    }
-
-    suspend inline fun <reified R : Any> executeAndGetList(json: Json = this.json): List<R> {
-        val result = execute()
-        return json.decodeFromJsonElement(result.body!!)
+            is PostgrestHttpResponse.Success -> {
+                PostgrestHttpResponse.Success(
+                    status = result.status,
+                    statusText = result.statusText,
+                    body = json.decodeFromJsonElement<R>(result.body),
+                    count = result.count,
+                )
+            }
+        }
     }
 }

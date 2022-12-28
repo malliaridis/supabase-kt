@@ -9,7 +9,7 @@ object Deps {
      * The libraries' version
      * TODO Get version from environment / pipeline
      */
-    const val version: String = "0.2.0-build1"
+    const val version: String = "0.2.0-build2"
 
     /**
      * JVM target of compilation
@@ -59,9 +59,8 @@ object Deps {
                 const val test = "org.jetbrains.kotlinx:kotlinx-coroutines-test:$VERSION"
             }
 
-            private const val dateTimeVersion = "0.4.0"
-            const val dateTime = "org.jetbrains.kotlinx:kotlinx-datetime:$dateTimeVersion"
-            const val serialization = "org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.0"
+            const val dateTime = "org.jetbrains.kotlinx:kotlinx-datetime:0.4.0"
+            const val serialization = "org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1"
         }
     }
 
@@ -96,11 +95,11 @@ object Deps {
     }
 
     object Test {
-        const val junit = "junit:junit:$4.13.2"
+        const val junit = "junit:junit:4.13.2"
         const val androidXTestJUnit = "androidx.test.ext:junit:1.1.3"
 
         const val mockito = "org.mockito:mockito-inline:4.6.1"
-        const val testCore = "androidx.test:core:$1.4.0"
+        const val testCore = "androidx.test:core:1.4.0"
 
         // TODO Remove if not needed anymore
         const val robolectric = "org.robolectric:robolectric:4.8.1"

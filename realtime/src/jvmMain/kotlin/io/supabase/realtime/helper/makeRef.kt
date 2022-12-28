@@ -1,5 +1,7 @@
 package io.supabase.realtime.helper
 
-actual fun makeRef(): String {
-    TODO("Not yet implemented")
-}
+import java.util.concurrent.atomic.AtomicInteger
+
+private val current = AtomicInteger()
+
+actual fun makeRef() = current.incrementAndGet().toString()

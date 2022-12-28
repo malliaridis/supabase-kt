@@ -3,12 +3,10 @@ package io.supabase
 import io.supabase.domain.Todo
 import io.supabase.gotrue.http.results.SessionResult
 import io.supabase.helper.getClient
+import io.supabase.postgrest.http.PostgrestHttpResponse
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
-import kotlin.test.Ignore
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertTrue
+import kotlin.test.*
 
 @OptIn(ExperimentalCoroutinesApi::class)
 internal class SupabaseClientTest {
@@ -28,8 +26,11 @@ internal class SupabaseClientTest {
         val supabase = getClient()
         supabase.auth.signIn(email = "my@email.com", password = "password")
 
-        val todos: List<Todo> = supabase.from<Todo>("todos").select().executeAndGetList()
-        assertTrue(todos.isNotEmpty(), "TODOs should not be empty.")
+        when (val response = supabase.from<Todo>("todos").select().execute<List<Todo>>()) {
+            is PostgrestHttpResponse.Failure -> fail("Response should succeed.")
+            is PostgrestHttpResponse.Success ->
+                assertTrue(response.body.isNotEmpty(), "TODOs should not be empty.")
+        }
     }
 
     /*
