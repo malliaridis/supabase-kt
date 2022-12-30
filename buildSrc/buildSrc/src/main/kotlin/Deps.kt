@@ -9,7 +9,7 @@ object Deps {
      * The libraries' version
      * TODO Get version from environment / pipeline
      */
-    const val version: String = "0.2.0-build3"
+    const val version: String = "0.2.0-build5"
 
     /**
      * JVM target of compilation

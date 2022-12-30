@@ -4,9 +4,11 @@ import io.ktor.client.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
+import io.supabase.postgrest.http.PostgrestError
 import io.supabase.postgrest.http.PostgrestHttpResponse
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
@@ -112,9 +114,130 @@ open class PostgrestBuilder<T : @Contextual Any>(
                 PostgrestHttpResponse.Success(
                     status = result.status,
                     statusText = result.statusText,
-                    body = json.decodeFromJsonElement<R>(result.body),
+                    body = json.decodeFromJsonElement(result.body),
                     count = result.count,
                 )
+            }
+        }
+    }
+
+    suspend inline fun <reified R : Any> executeAndGetSingle(json: Json = this.json): PostgrestHttpResponse<R> {
+        return when (val result = execute()) {
+            is PostgrestHttpResponse.Failure -> PostgrestHttpResponse.Failure(
+                status = result.status,
+                statusText = result.statusText,
+                body = null,
+                count = result.count,
+                error = result.error,
+            )
+
+            is PostgrestHttpResponse.Success -> try {
+                PostgrestHttpResponse.Success(
+                    status = result.status,
+                    statusText = result.statusText,
+                    body = json.decodeFromJsonElement<List<R>>(result.body)[0],
+                    count = result.count,
+                )
+            } catch (exception: SerializationException) {
+                PostgrestHttpResponse.Failure(
+                    status = result.status,
+                    statusText = result.statusText,
+                    body = null,
+                    count = result.count,
+                    error = PostgrestError(
+                        message = exception.message ?: "Unknown error",
+                        code = "",
+                        details = exception.cause.toString(),
+                        hint = "A serialization error occurred while decoding the response as a single object"
+                    ),
+                )
+            } catch (exception: IllegalArgumentException) {
+                PostgrestHttpResponse.Failure(
+                    status = result.status,
+                    statusText = result.statusText,
+                    body = null,
+                    count = result.count,
+                    error = PostgrestError(
+                        message = exception.message ?: "Unknown error",
+                        code = "",
+                        details = exception.cause.toString(),
+                        hint = "An illegal argument exception was thrown while decoding the response as a single object"
+                    ),
+                )
+            }
+        }
+    }
+
+    suspend inline fun <reified R : Any> executeAndGetList(json: Json = this.json): PostgrestHttpResponse<List<R>> {
+        return when (val result = execute()) {
+            is PostgrestHttpResponse.Failure -> PostgrestHttpResponse.Failure(
+                status = result.status,
+                statusText = result.statusText,
+                body = null,
+                count = result.count,
+                error = result.error,
+            )
+
+            is PostgrestHttpResponse.Success -> try {
+                PostgrestHttpResponse.Success(
+                    status = result.status,
+                    statusText = result.statusText,
+                    body = json.decodeFromJsonElement(result.body),
+                    count = result.count,
+                )
+            } catch (exception: SerializationException) {
+                PostgrestHttpResponse.Failure(
+                    status = result.status,
+                    statusText = result.statusText,
+                    body = null,
+                    count = result.count,
+                    error = PostgrestError(
+                        message = exception.message ?: "Unknown error",
+                        code = "",
+                        details = exception.cause.toString(),
+                        hint = "A serialization error occurred while decoding the response as a list object"
+                    ),
+                )
+            } catch (exception: IllegalArgumentException) {
+                PostgrestHttpResponse.Failure(
+                    status = result.status,
+                    statusText = result.statusText,
+                    body = null,
+                    count = result.count,
+                    error = PostgrestError(
+                        message = exception.message ?: "Unknown error",
+                        code = "",
+                        details = exception.cause.toString(),
+                        hint = "An illegal argument exception was thrown while decoding the response as a list object"
+                    ),
+                )
+            }
+        }
+    }
+
+    suspend inline fun <reified R : Any> executeAndGetSingleOrNull(json: Json = this.json): R? {
+        return when (val result = execute()) {
+            is PostgrestHttpResponse.Failure -> null
+            is PostgrestHttpResponse.Success -> try {
+                val data = json.decodeFromJsonElement<List<R>>(result.body)
+                data[0]
+            } catch (exception: SerializationException) {
+                null
+            } catch (exception: IllegalArgumentException) {
+                null
+            }
+        }
+    }
+
+    suspend inline fun <reified R : Any> executeAndGetListOrNull(json: Json = this.json): List<R>? {
+        return when (val result = execute()) {
+            is PostgrestHttpResponse.Failure -> null
+            is PostgrestHttpResponse.Success -> try {
+                json.decodeFromJsonElement(result.body)
+            } catch (exception: SerializationException) {
+                null
+            } catch (exception: IllegalArgumentException) {
+                null
             }
         }
     }
